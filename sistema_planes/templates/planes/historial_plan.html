@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}Historial del Plan{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'ver_plan' plan.id %}">Ver Plan</a></li>
+                <li class="breadcrumb-item active">Historial</li>
+            </ol>
+        </nav>
+        <h2><i class="bi bi-clock-history"></i> Historial del Plan</h2>
+        <p class="text-muted">{{ plan.proveedor.razon_social }} - {{ plan.evaluacion.periodo }}</p>
+    </div>
+</div>
+
+<!-- Información Actual -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header
+                {% if tipo_flujo == 'principal' %}bg-primary
+                {% elif tipo_flujo == 'excepcion' %}bg-warning
+                {% elif tipo_flujo == 'final' %}bg-success
+                {% else %}bg-secondary{% endif %} text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Estado Actual</h5>
+                    <span class="badge bg-light text-dark fs-6">{{ plan.get_estado_display }}</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>Tipo de Flujo:</strong><br>
+                        {% if tipo_flujo == 'principal' %}
+                            <span class="badge bg-primary">Flujo Principal</span>
+                        {% elif tipo_flujo == 'excepcion' %}
+                            <span class="badge bg-warning">Flujo de Excepción</span>
+                        {% elif tipo_flujo == 'final' %}
+                            <span class="badge bg-success">Estado Final</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ tipo_flujo|title }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Estado:</strong><br>
+                        {% if es_estado_activo %}
+                            <span class="badge bg-info">Activo - Requiere Seguimiento</span>
+                        {% elif es_estado_final %}
+                            <span class="badge bg-success">Finalizado</span>
+                        {% else %}
+                            <span class="badge bg-secondary">En Proceso</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Número de Versión:</strong><br>
+                        Versión {{ plan.numero_version }}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Fecha de Creación:</strong><br>
+                        {{ plan.fecha_creacion|date:"d/m/Y H:i" }}
+                    </div>
+                </div>
+                {% if plan.numero_radicado %}
+                <hr>
+                <div class="row">
+                    <div class="col-md-12">
+                        <strong>Número de Radicado:</strong> <span class="badge bg-success">{{ plan.numero_radicado }}</span>
+                        (Fecha: {{ plan.fecha_radicacion|date:"d/m/Y H:i" }})
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Timeline del Historial -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="bi bi-list-ol"></i> Línea de Tiempo de Cambios</h5>
+            </div>
+            <div class="card-body">
+                {% if historial %}
+                <div class="timeline">
+                    {% for item in historial %}
+                    <div class="timeline-item mb-4">
+                        <div class="row">
+                            <div class="col-md-2 text-end">
+                                <small class="text-muted">
+                                    {{ item.fecha_cambio|date:"d/m/Y" }}<br>
+                                    {{ item.fecha_cambio|date:"H:i" }}
+                                </small>
+                            </div>
+                            <div class="col-md-1 text-center">
+                                <div class="timeline-marker">
+                                    <i class="bi bi-circle-fill text-primary"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-9">
+                                <div class="card border-start border-primary border-4">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <span class="badge bg-secondary">{{ item.estado_anterior }}</span>
+                                            <i class="bi bi-arrow-right mx-2"></i>
+                                            <span class="badge bg-primary">{{ item.estado_nuevo }}</span>
+                                        </h6>
+                                        {% if item.comentario %}
+                                        <p class="card-text">{{ item.comentario }}</p>
+                                        {% endif %}
+                                        {% if item.usuario %}
+                                        <p class="card-text">
+                                            <small class="text-muted">
+                                                <i class="bi bi-person"></i>
+                                                {{ item.usuario.get_full_name|default:item.usuario.username }}
+                                            </small>
+                                        </p>
+                                        {% else %}
+                                        <p class="card-text">
+                                            <small class="text-muted">
+                                                <i class="bi bi-robot"></i> Sistema Automático
+                                            </small>
+                                        </p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No hay cambios registrados en el historial aún.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botones de Acción -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <a href="{% url 'ver_plan' plan.id %}" class="btn btn-primary">
+            <i class="bi bi-arrow-left"></i> Volver al Plan
+        </a>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.timeline {
+    position: relative;
+}
+
+.timeline-item {
+    position: relative;
+}
+
+.timeline-marker {
+    font-size: 12px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 12.5%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+</style>
+{% endblock %}

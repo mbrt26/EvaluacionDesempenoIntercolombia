@@ -1,0 +1,480 @@
+{% extends 'base.html' %}
+
+{% block title %}Lista de Proveedores - Sistema de Planes{% endblock %}
+
+{% block content %}
+<style>
+    .table-proveedores {
+        font-size: 14px;
+    }
+    .table-proveedores th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        color: #495057;
+        border-bottom: 2px solid #dee2e6;
+        white-space: nowrap;
+    }
+    .table-proveedores td {
+        vertical-align: middle;
+        padding: 12px 8px;
+    }
+    .puntaje-badge {
+        font-size: 16px;
+        font-weight: bold;
+        padding: 8px 12px;
+        border-radius: 8px;
+    }
+    .puntaje-excelente {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .puntaje-bueno {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    .puntaje-regular {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    .proveedor-nombre {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    .proveedor-nit {
+        color: #6c757d;
+        font-size: 12px;
+    }
+    .criterio-puntaje {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        min-width: 35px;
+        text-align: center;
+    }
+    .criterio-bueno {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .criterio-medio {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    .criterio-bajo {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    .estado-badge {
+        font-size: 11px;
+        padding: 4px 8px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .card-stat {
+        border-left: 4px solid;
+        transition: transform 0.2s;
+    }
+    .card-stat:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .stat-primary { border-left-color: #007bff; }
+    .stat-danger { border-left-color: #dc3545; }
+    .stat-warning { border-left-color: #ffc107; }
+    .stat-success { border-left-color: #28a745; }
+</style>
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'panel_tecnico' %}">Panel Técnico</a></li>
+                    <li class="breadcrumb-item active">Lista de Proveedores</li>
+                </ol>
+            </nav>
+            <h2 class="mb-0">Lista de Proveedores y Evaluaciones</h2>
+            <p class="text-muted">Gestión integral de proveedores y planes de mejoramiento</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'crear_evaluacion' %}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Nueva Evaluación
+            </a>
+            <button class="btn btn-outline-secondary" onclick="window.print()">
+                <i class="fas fa-print"></i> Imprimir
+            </button>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card card-stat stat-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">{{ total_proveedores }}</h3>
+                            <small class="text-muted">Total Proveedores</small>
+                        </div>
+                        <i class="fas fa-building fa-2x text-primary opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card card-stat stat-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">{{ proveedores_bajo_80 }}</h3>
+                            <small class="text-muted">Requieren Plan</small>
+                        </div>
+                        <i class="fas fa-exclamation-triangle fa-2x text-danger opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card card-stat stat-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">{{ planes_pendientes }}</h3>
+                            <small class="text-muted">Planes Pendientes</small>
+                        </div>
+                        <i class="fas fa-clock fa-2x text-warning opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card card-stat stat-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">{{ planes_aprobados }}</h3>
+                            <small class="text-muted">Planes Aprobados</small>
+                        </div>
+                        <i class="fas fa-check-circle fa-2x text-success opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Proveedores -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-3">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list"></i> Proveedores Evaluados
+                    </h5>
+                </div>
+                <div class="col-auto">
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" id="buscarTabla" placeholder="Buscar...">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-proveedores mb-0">
+                    <thead>
+                        <tr>
+                            <th width="25%">Proveedor</th>
+                            <th class="text-center" width="10%">Período</th>
+                            <th class="text-center" width="10%">Puntaje Total</th>
+                            <th class="text-center" width="25%">Desglose de Puntaje</th>
+                            <th class="text-center" width="15%">Estado del Plan</th>
+                            <th class="text-center" width="15%">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in proveedores %}
+                        <tr class="{% if item.evaluacion.puntaje < 60 %}table-danger{% elif item.evaluacion.puntaje < 70 %}table-warning{% endif %}">
+                            <td>
+                                <div class="proveedor-nombre">{{ item.proveedor.razon_social }}</div>
+                                <div class="proveedor-nit">NIT: {{ item.proveedor.nit }}</div>
+                                <small class="text-muted">
+                                    <i class="fas fa-envelope"></i> {{ item.proveedor.email }}
+                                </small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary">{{ item.evaluacion.periodo }}</span>
+                            </td>
+                            <td class="text-center">
+                                <div class="puntaje-badge {% if item.evaluacion.puntaje >= 90 %}puntaje-excelente{% elif item.evaluacion.puntaje >= 70 %}puntaje-bueno{% else %}puntaje-regular{% endif %}">
+                                    {{ item.evaluacion.puntaje }}
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-around">
+                                    <div>
+                                        <small class="d-block text-muted">Calidad</small>
+                                        <span class="criterio-puntaje {% if item.evaluacion.puntaje_calidad >= 20 %}criterio-bueno{% elif item.evaluacion.puntaje_calidad >= 15 %}criterio-medio{% else %}criterio-bajo{% endif %}">
+                                            {{ item.evaluacion.puntaje_calidad }}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <small class="d-block text-muted">Entrega</small>
+                                        <span class="criterio-puntaje {% if item.evaluacion.puntaje_entrega >= 20 %}criterio-bueno{% elif item.evaluacion.puntaje_entrega >= 15 %}criterio-medio{% else %}criterio-bajo{% endif %}">
+                                            {{ item.evaluacion.puntaje_entrega }}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <small class="d-block text-muted">Docs</small>
+                                        <span class="criterio-puntaje {% if item.evaluacion.puntaje_documentacion >= 20 %}criterio-bueno{% elif item.evaluacion.puntaje_documentacion >= 15 %}criterio-medio{% else %}criterio-bajo{% endif %}">
+                                            {{ item.evaluacion.puntaje_documentacion }}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <small class="d-block text-muted">Precio</small>
+                                        <span class="criterio-puntaje {% if item.evaluacion.puntaje_precio >= 20 %}criterio-bueno{% elif item.evaluacion.puntaje_precio >= 15 %}criterio-medio{% else %}criterio-bajo{% endif %}">
+                                            {{ item.evaluacion.puntaje_precio }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                {% if item.plan %}
+                                    {% if item.plan.estado == 'ENVIADO' %}
+                                        <span class="badge bg-info estado-badge">
+                                            <i class="fas fa-paper-plane"></i> Enviado
+                                        </span>
+                                    {% elif item.plan.estado == 'EN_REVISION' %}
+                                        <span class="badge bg-warning estado-badge">
+                                            <i class="fas fa-eye"></i> En Revisión
+                                        </span>
+                                    {% elif item.plan.estado == 'REQUIERE_AJUSTES' %}
+                                        <span class="badge bg-danger estado-badge">
+                                            <i class="fas fa-edit"></i> Requiere Ajustes
+                                        </span>
+                                    {% elif item.plan.estado == 'APROBADO' %}
+                                        <span class="badge bg-success estado-badge">
+                                            <i class="fas fa-check"></i> Aprobado
+                                        </span>
+                                    {% elif item.plan.estado == 'RECHAZADO' %}
+                                        <span class="badge bg-dark estado-badge">
+                                            <i class="fas fa-times"></i> Rechazado
+                                        </span>
+                                    {% endif %}
+                                    <small class="d-block text-muted mt-1">
+                                        {{ item.plan.fecha_envio|date:"d/m/Y" }}
+                                    </small>
+                                {% else %}
+                                    {% if item.evaluacion.puntaje < 70 %}
+                                        <span class="badge bg-secondary estado-badge">
+                                            <i class="fas fa-exclamation"></i> Sin Plan
+                                        </span>
+                                        <small class="d-block text-danger mt-1">Requerido</small>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark estado-badge">
+                                            No Requiere
+                                        </span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group" role="group">
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-info" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#modalProveedor{{ item.proveedor.id }}"
+                                            title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    {% if item.plan %}
+                                        {% if item.plan.estado == 'ENVIADO' or item.plan.estado == 'EN_REVISION' %}
+                                            <a href="{% url 'revisar_plan' item.plan.id %}" 
+                                               class="btn btn-sm btn-outline-primary"
+                                               title="Revisar plan">
+                                                <i class="fas fa-clipboard-check"></i>
+                                            </a>
+                                        {% else %}
+                                            <a href="{% url 'ver_plan' item.plan.id %}" 
+                                               class="btn btn-sm btn-outline-secondary"
+                                               title="Ver plan">
+                                                <i class="fas fa-file-alt"></i>
+                                            </a>
+                                        {% endif %}
+                                    {% endif %}
+                                    <a href="{% url 'crear_evaluacion_proveedor' item.proveedor.id %}" 
+                                       class="btn btn-sm btn-outline-success"
+                                       title="Nueva evaluación">
+                                        <i class="fas fa-plus"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- Modal de Detalle -->
+                        <div class="modal fade" id="modalProveedor{{ item.proveedor.id }}" tabindex="-1">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header bg-light">
+                                        <h5 class="modal-title">
+                                            <i class="fas fa-building"></i> {{ item.proveedor.razon_social }}
+                                        </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6 class="text-muted">Información del Proveedor</h6>
+                                                <table class="table table-sm">
+                                                    <tr>
+                                                        <th width="40%">NIT:</th>
+                                                        <td>{{ item.proveedor.nit }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Email:</th>
+                                                        <td>{{ item.proveedor.email }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Teléfono:</th>
+                                                        <td>{{ item.proveedor.telefono }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Estado:</th>
+                                                        <td>
+                                                            {% if item.proveedor.activo %}
+                                                                <span class="badge bg-success">Activo</span>
+                                                            {% else %}
+                                                                <span class="badge bg-danger">Inactivo</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6 class="text-muted">Evaluación {{ item.evaluacion.periodo }}</h6>
+                                                <div class="text-center mb-3">
+                                                    <h2 class="{% if item.evaluacion.puntaje >= 90 %}text-success{% elif item.evaluacion.puntaje >= 70 %}text-warning{% else %}text-danger{% endif %}">
+                                                        {{ item.evaluacion.puntaje }}/100
+                                                    </h2>
+                                                </div>
+                                                <div class="progress mb-2" style="height: 25px;">
+                                                    <div class="progress-bar {% if item.evaluacion.puntaje >= 90 %}bg-success{% elif item.evaluacion.puntaje >= 70 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                         style="width: {{ item.evaluacion.puntaje }}%">
+                                                        {{ item.evaluacion.puntaje }}%
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        {% if item.evaluacion.observaciones %}
+                                        <div class="mt-3">
+                                            <h6 class="text-muted">Observaciones de la Evaluación</h6>
+                                            <div class="alert alert-light">
+                                                {{ item.evaluacion.observaciones }}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if item.plan %}
+                                        <div class="mt-3">
+                                            <h6 class="text-muted">Plan de Mejoramiento</h6>
+                                            <table class="table table-sm">
+                                                <tr>
+                                                    <th width="30%">Estado:</th>
+                                                    <td>
+                                                        <span class="badge bg-{% if item.plan.estado == 'APROBADO' %}success{% elif item.plan.estado == 'RECHAZADO' %}danger{% elif item.plan.estado == 'REQUIERE_AJUSTES' %}warning{% else %}info{% endif %}">
+                                                            {{ item.plan.get_estado_display }}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Fecha Envío:</th>
+                                                    <td>{{ item.plan.fecha_envio|date:"d/m/Y H:i"|default:"Pendiente" }}</td>
+                                                </tr>
+                                                {% if item.plan.fecha_revision %}
+                                                <tr>
+                                                    <th>Fecha Revisión:</th>
+                                                    <td>{{ item.plan.fecha_revision|date:"d/m/Y H:i" }}</td>
+                                                </tr>
+                                                {% endif %}
+                                                {% if item.plan.revisado_por %}
+                                                <tr>
+                                                    <th>Revisado por:</th>
+                                                    <td>{{ item.plan.revisado_por.get_full_name|default:item.plan.revisado_por.username }}</td>
+                                                </tr>
+                                                {% endif %}
+                                            </table>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                        {% if item.plan and item.plan.estado in 'ENVIADO,EN_REVISION' %}
+                                            <a href="{% url 'revisar_plan' item.plan.id %}" class="btn btn-primary">
+                                                <i class="fas fa-clipboard-check"></i> Revisar Plan
+                                            </a>
+                                        {% elif item.plan %}
+                                            <a href="{% url 'ver_plan' item.plan.id %}" class="btn btn-primary">
+                                                <i class="fas fa-file-alt"></i> Ver Plan
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No se encontraron proveedores con evaluaciones</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de Acción -->
+    <div class="row mt-4">
+        <div class="col">
+            <a href="{% url 'panel_tecnico' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver al Panel
+            </a>
+        </div>
+        <div class="col text-end">
+            <button class="btn btn-outline-success" onclick="exportarExcel()">
+                <i class="fas fa-file-excel"></i> Exportar Excel
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Búsqueda en tiempo real
+document.getElementById('buscarTabla').addEventListener('keyup', function() {
+    var searchText = this.value.toLowerCase();
+    var tableRows = document.querySelectorAll('.table-proveedores tbody tr');
+    
+    tableRows.forEach(function(row) {
+        var rowText = row.textContent.toLowerCase();
+        if (rowText.includes(searchText)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+
+// Exportar a Excel
+function exportarExcel() {
+    // Implementar exportación a Excel
+    alert('Función de exportación en desarrollo');
+}
+</script>
+{% endblock %}

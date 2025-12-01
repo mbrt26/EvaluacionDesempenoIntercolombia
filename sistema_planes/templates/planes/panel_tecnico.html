@@ -1,0 +1,378 @@
+{% extends 'base.html' %}
+
+{% block title %}Panel Técnico - Sistema de Planes de Mejoramiento{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        border-left: 4px solid;
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .stat-card.blue { border-left-color: #3498db; }
+    .stat-card.green { border-left-color: #27ae60; }
+    .stat-card.orange { border-left-color: #f39c12; }
+    .stat-card.red { border-left-color: #e74c3c; }
+    .stat-card.purple { border-left-color: #9b59b6; }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+
+    .stat-label {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col">
+        <h1><i class="bi bi-speedometer2"></i> Panel de Proveedores</h1>
+        <p class="text-muted">Sistema de Evaluación de Desempeño y Planes de Mejoramiento</p>
+    </div>
+</div>
+
+<!-- Estadísticas Generales -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Estadísticas Generales</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4 mb-3">
+                        <div class="stat-number text-primary">{{ estadisticas.total_evaluaciones }}</div>
+                        <div class="stat-label">Evaluaciones</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-number text-info">{{ estadisticas.total_planes }}</div>
+                        <div class="stat-label">Planes Totales</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-number text-success">{{ estadisticas.planes_aprobados }}</div>
+                        <div class="stat-label">Planes Aprobados</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> Resumen de Evaluaciones</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="stat-number text-success">{{ estadisticas.evaluaciones_satisfactorias }}</div>
+                        <div class="stat-label">Satisfactorias</div>
+                        <small class="text-muted">(≥80)</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-number text-warning">{{ estadisticas.evaluaciones_aceptables }}</div>
+                        <div class="stat-label">Aceptables</div>
+                        <small class="text-muted">(60-79)</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-number text-danger">{{ estadisticas.evaluaciones_criticas }}</div>
+                        <div class="stat-label">Críticas</div>
+                        <small class="text-muted">(&lt;60)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estados de Planes -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> Estado de Planes de Mejoramiento</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-2">
+                        <div class="mb-2">
+                            <span class="badge bg-secondary fs-4">{{ estadisticas.planes_borrador }}</span>
+                        </div>
+                        <small class="text-muted">Borrador</small>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="mb-2">
+                            <span class="badge bg-info fs-4">{{ estadisticas.planes_enviados }}</span>
+                        </div>
+                        <small class="text-muted">Enviados</small>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="mb-2">
+                            <span class="badge bg-warning fs-4">{{ estadisticas.planes_revision }}</span>
+                        </div>
+                        <small class="text-muted">En Revisión</small>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="mb-2">
+                            <span class="badge bg-danger fs-4">{{ estadisticas.planes_requiere_ajustes }}</span>
+                        </div>
+                        <small class="text-muted">Requiere Ajustes</small>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="mb-2">
+                            <span class="badge bg-success fs-4">{{ estadisticas.planes_aprobados }}</span>
+                        </div>
+                        <small class="text-muted">Aprobados</small>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="mb-2">
+                            <span class="badge bg-dark fs-4">{{ estadisticas.planes_rechazados }}</span>
+                        </div>
+                        <small class="text-muted">Rechazados</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Historial de Evaluaciones -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+            <i class="bi bi-clock-history"></i> Historial de Evaluaciones
+        </h5>
+    </div>
+    <div class="card-body">
+        <!-- Filtros -->
+        <form method="get" class="mb-4">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label"><strong>Proveedor (Razón Social o NIT)</strong></label>
+                    <input type="text" name="proveedor" class="form-control" placeholder="Buscar proveedor..." value="{{ filtros.proveedor }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label"><strong>N° Contrato</strong></label>
+                    <input type="text" name="contrato" class="form-control" placeholder="N° Contrato..." value="{{ filtros.contrato }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label"><strong>Fecha Desde</strong></label>
+                    <input type="date" name="fecha_desde" class="form-control" value="{{ filtros.fecha_desde }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label"><strong>Fecha Hasta</strong></label>
+                    <input type="date" name="fecha_hasta" class="form-control" value="{{ filtros.fecha_hasta }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label"><strong>Categoría</strong></label>
+                    <select name="categoria" class="form-select">
+                        <option value="">Todas</option>
+                        <option value="satisfactoria" {% if filtros.categoria == 'satisfactoria' %}selected{% endif %}>Satisfactoria (≥80)</option>
+                        <option value="aceptable" {% if filtros.categoria == 'aceptable' %}selected{% endif %}>Aceptable (60-79)</option>
+                        <option value="critica" {% if filtros.categoria == 'critica' %}selected{% endif %}>Crítica (&lt;60)</option>
+                    </select>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Filtrar
+                    </button>
+                </div>
+            </div>
+            {% if filtros.proveedor or filtros.contrato or filtros.fecha_desde or filtros.fecha_hasta or filtros.categoria %}
+            <div class="mt-3">
+                <a href="{% url 'tecnico_panel' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Limpiar Filtros
+                </a>
+            </div>
+            {% endif %}
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Proveedor</th>
+                        <th>NIT</th>
+                        <th>Fecha</th>
+                        <th>N° Contrato</th>
+                        <th>Subcategoría</th>
+                        <th class="text-center">Puntaje</th>
+                        <th class="text-center">Estado</th>
+                        <th class="text-center">Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for evaluacion in evaluaciones %}
+                    <tr>
+                        <td><strong>{{ evaluacion.proveedor.razon_social }}</strong></td>
+                        <td>{{ evaluacion.proveedor.nit }}</td>
+                        <td>{{ evaluacion.fecha|date:"d/m/Y" }}</td>
+                        <td>{{ evaluacion.numero_contrato|default:"—" }}</td>
+                        <td>{{ evaluacion.subcategoria|default:"—" }}</td>
+                        <td class="text-center">
+                            <span class="badge {% if evaluacion.puntaje >= 80 %}bg-success{% elif evaluacion.puntaje >= 60 %}bg-warning text-dark{% else %}bg-danger{% endif %}" style="font-size: 1.1rem; padding: 0.5rem;">
+                                {{ evaluacion.puntaje }}/100
+                            </span>
+                        </td>
+                        <td class="text-center">{{ evaluacion.estado_evaluacion }}</td>
+                        <td>{{ evaluacion.observaciones_generales|default:"—"|truncatewords:15 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5">
+                            <div style="font-size: 48px;">📭</div>
+                            <p class="text-muted">No hay evaluaciones registradas</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Planes de Mejoramiento -->
+<div class="card">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">
+            <i class="bi bi-clipboard-check"></i> Planes de Mejoramiento
+        </h5>
+    </div>
+    <div class="card-body">
+        <!-- Filtros de Planes -->
+        <form method="get" class="mb-4">
+            <!-- Mantener filtros de evaluaciones si existen -->
+            {% if filtros.proveedor %}<input type="hidden" name="proveedor" value="{{ filtros.proveedor }}">{% endif %}
+            {% if filtros.contrato %}<input type="hidden" name="contrato" value="{{ filtros.contrato }}">{% endif %}
+            {% if filtros.fecha_desde %}<input type="hidden" name="fecha_desde" value="{{ filtros.fecha_desde }}">{% endif %}
+            {% if filtros.fecha_hasta %}<input type="hidden" name="fecha_hasta" value="{{ filtros.fecha_hasta }}">{% endif %}
+            {% if filtros.categoria %}<input type="hidden" name="categoria" value="{{ filtros.categoria }}">{% endif %}
+
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label"><strong>Proveedor (Razón Social o NIT)</strong></label>
+                    <input type="text" name="plan_proveedor" class="form-control" placeholder="Buscar proveedor..." value="{{ filtros_planes.proveedor }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label"><strong>Estado</strong></label>
+                    <select name="plan_estado" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="BORRADOR" {% if filtros_planes.estado == 'BORRADOR' %}selected{% endif %}>Borrador</option>
+                        <option value="ENVIADO" {% if filtros_planes.estado == 'ENVIADO' %}selected{% endif %}>Enviado</option>
+                        <option value="EN_REVISION" {% if filtros_planes.estado == 'EN_REVISION' %}selected{% endif %}>En Revisión</option>
+                        <option value="REQUIERE_AJUSTES" {% if filtros_planes.estado == 'REQUIERE_AJUSTES' %}selected{% endif %}>Requiere Ajustes</option>
+                        <option value="APROBADO" {% if filtros_planes.estado == 'APROBADO' %}selected{% endif %}>Aprobado</option>
+                        <option value="RECHAZADO" {% if filtros_planes.estado == 'RECHAZADO' %}selected{% endif %}>Rechazado</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label"><strong>Fecha Desde</strong></label>
+                    <input type="date" name="plan_fecha_desde" class="form-control" value="{{ filtros_planes.fecha_desde }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label"><strong>Fecha Hasta</strong></label>
+                    <input type="date" name="plan_fecha_hasta" class="form-control" value="{{ filtros_planes.fecha_hasta }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-success me-2">
+                        <i class="bi bi-search"></i> Filtrar
+                    </button>
+                    {% if filtros_planes.proveedor or filtros_planes.estado or filtros_planes.fecha_desde or filtros_planes.fecha_hasta %}
+                    <a href="{% url 'tecnico_panel' %}{% if filtros.proveedor or filtros.contrato or filtros.fecha_desde or filtros.fecha_hasta or filtros.categoria %}?proveedor={{ filtros.proveedor }}&contrato={{ filtros.contrato }}&fecha_desde={{ filtros.fecha_desde }}&fecha_hasta={{ filtros.fecha_hasta }}&categoria={{ filtros.categoria }}{% endif %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Limpiar
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Proveedor</th>
+                        <th>NIT</th>
+                        <th>Evaluación</th>
+                        <th>N° Contrato</th>
+                        <th>Fecha Creación</th>
+                        <th class="text-center">Estado</th>
+                        <th class="text-center">Fecha Límite</th>
+                        <th class="text-center">Última Actualización</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for plan in planes %}
+                    <tr>
+                        <td><strong>{{ plan.proveedor.razon_social }}</strong></td>
+                        <td>{{ plan.proveedor.nit }}</td>
+                        <td>{{ plan.evaluacion.fecha|date:"d/m/Y" }}</td>
+                        <td>{{ plan.evaluacion.numero_contrato|default:"—" }}</td>
+                        <td>{{ plan.fecha_creacion|date:"d/m/Y" }}</td>
+                        <td class="text-center">
+                            {% if plan.estado == 'APROBADO' %}
+                                <span class="badge bg-success">✓ APROBADO</span>
+                            {% elif plan.estado == 'RECHAZADO' %}
+                                <span class="badge bg-dark">✗ RECHAZADO</span>
+                            {% elif plan.estado == 'ENVIADO' %}
+                                <span class="badge bg-info">→ ENVIADO</span>
+                            {% elif plan.estado == 'EN_REVISION' %}
+                                <span class="badge bg-warning">⚙ EN REVISIÓN</span>
+                            {% elif plan.estado == 'REQUIERE_AJUSTES' %}
+                                <span class="badge bg-danger">! AJUSTES</span>
+                            {% elif plan.estado == 'BORRADOR' %}
+                                <span class="badge bg-secondary">📝 BORRADOR</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ plan.get_estado_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if plan.fecha_limite %}
+                                <span class="{% if plan.esta_vencido %}text-danger fw-bold{% endif %}">
+                                    {{ plan.fecha_limite|date:"d/m/Y" }}
+                                </span>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if plan.fecha_aprobacion %}
+                                <small class="text-muted">{{ plan.fecha_aprobacion|date:"d/m/Y H:i" }}</small>
+                            {% elif plan.fecha_revision %}
+                                <small class="text-muted">{{ plan.fecha_revision|date:"d/m/Y H:i" }}</small>
+                            {% elif plan.fecha_envio %}
+                                <small class="text-muted">{{ plan.fecha_envio|date:"d/m/Y H:i" }}</small>
+                            {% else %}
+                                <small class="text-muted">{{ plan.fecha_creacion|date:"d/m/Y H:i" }}</small>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <a href="{% url 'ver_plan' plan.id %}" class="btn btn-primary btn-sm">
+                                <i class="bi bi-eye"></i> Revisar
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-5">
+                            <div style="font-size: 48px;">📋</div>
+                            <p class="text-muted">No hay planes de mejoramiento registrados</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

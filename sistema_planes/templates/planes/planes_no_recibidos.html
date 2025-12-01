@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}Planes No Recibidos{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="bi bi-exclamation-triangle text-warning"></i> Planes No Recibidos</h2>
+        <p class="text-muted">Planes que no han sido recibidos después de 30 días</p>
+    </div>
+</div>
+
+<!-- Estadísticas -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="alert alert-warning">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Planes Sin Respuesta</h5>
+                    <p class="mb-0">Hay <strong>{{ total_no_recibidos }}</strong> plan(es) sin recibir</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="{% url 'tecnico_panel' %}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left"></i> Volver al Panel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de Planes -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0"><i class="bi bi-list"></i> Lista de Planes No Recibidos</h5>
+            </div>
+            <div class="card-body">
+                {% if planes %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Proveedor</th>
+                                <th>NIT</th>
+                                <th>Evaluación</th>
+                                <th>Puntaje</th>
+                                <th>Carta Enviada</th>
+                                <th>Días Sin Respuesta</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for plan in planes %}
+                            <tr class="{% if plan.dias_sin_respuesta > 45 %}table-danger{% elif plan.dias_sin_respuesta > 30 %}table-warning{% endif %}">
+                                <td><strong>#{{ plan.id }}</strong></td>
+                                <td>{{ plan.proveedor.razon_social }}</td>
+                                <td>{{ plan.proveedor.nit }}</td>
+                                <td>{{ plan.evaluacion.periodo }}</td>
+                                <td>
+                                    <span class="badge {% if plan.evaluacion.puntaje < 60 %}bg-danger{% else %}bg-warning{% endif %}">
+                                        {{ plan.evaluacion.puntaje }}/100
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if plan.fecha_carta %}
+                                    {{ plan.fecha_carta|date:"d/m/Y" }}
+                                    {% else %}
+                                    <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge
+                                        {% if plan.dias_sin_respuesta > 60 %}bg-danger
+                                        {% elif plan.dias_sin_respuesta > 45 %}bg-warning
+                                        {% else %}bg-info{% endif %}">
+                                        {{ plan.dias_sin_respuesta }} días
+                                    </span>
+                                </td>
+                                <td><span class="badge bg-secondary">{{ plan.get_estado_display }}</span></td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'ver_plan' plan.id %}" class="btn btn-outline-primary"
+                                           title="Ver Detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{% url 'solicitar_aclaracion' plan.id %}" class="btn btn-warning"
+                                           title="Solicitar Aclaración">
+                                            <i class="bi bi-chat-dots"></i> Aclaración
+                                        </a>
+                                        <a href="{% url 'historial_plan' plan.id %}" class="btn btn-info"
+                                           title="Ver Historial">
+                                            <i class="bi bi-clock-history"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="alert alert-info mt-3">
+                    <h6><i class="bi bi-info-circle"></i> Leyenda de Colores:</h6>
+                    <ul class="mb-0">
+                        <li><strong>Normal:</strong> 30-45 días sin respuesta</li>
+                        <li><strong>Amarillo:</strong> 45-60 días sin respuesta - Requiere atención</li>
+                        <li><strong>Rojo:</strong> Más de 60 días sin respuesta - Acción urgente</li>
+                    </ul>
+                </div>
+                {% else %}
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle"></i> No hay planes sin recibir en este momento.
+                    Todos los proveedores han respondido en tiempo.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

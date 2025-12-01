@@ -1,0 +1,178 @@
+<!-- Snippet para agregar en ver_plan.html después de la información del plan -->
+<!-- BOTONES DE WORKFLOW - Agregar después de las tarjetas de información -->
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-gear"></i> Acciones del Workflow</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Botón Ver Historial (Todos) -->
+                    <div class="col-md-12 mb-3">
+                        <a href="{% url 'historial_plan' plan.id %}" class="btn btn-info">
+                            <i class="bi bi-clock-history"></i> Ver Historial Completo
+                        </a>
+                    </div>
+                </div>
+
+                <div class="row">
+                    {% if es_proveedor %}
+                        <!-- BOTONES PARA PROVEEDOR -->
+                        {% if plan.estado == 'BORRADOR' or plan.estado == 'REQUIERE_AJUSTES' %}
+                            <div class="col-md-12">
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    Este plan está en estado <strong>{{ plan.get_estado_display }}</strong>.
+                                    Puede editarlo y enviarlo para revisión.
+                                </div>
+                                <a href="{% url 'proveedor_editar_plan' plan.id %}" class="btn btn-warning">
+                                    <i class="bi bi-pencil"></i> Editar Plan
+                                </a>
+                            </div>
+                        {% elif plan.estado == 'PROCESO_FIRMAS' %}
+                            <div class="col-md-12">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i>
+                                    Su plan está en proceso de firmas. Una vez firmado, use el botón de abajo para confirmar el envío.
+                                </div>
+                                <a href="{% url 'cambiar_estado_plan' plan.id %}" class="btn btn-primary">
+                                    <i class="bi bi-check-circle"></i> Confirmar Envío del Plan Firmado
+                                </a>
+                            </div>
+                        {% elif plan.estado == 'ACLARACION' %}
+                            <div class="col-md-12">
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-chat-dots"></i>
+                                    Se requiere una aclaración sobre su plan.
+                                    {% if plan.observaciones_aclaracion %}
+                                    <hr>
+                                    <p><strong>Observaciones:</strong> {{ plan.observaciones_aclaracion }}</p>
+                                    {% endif %}
+                                </div>
+                                <a href="{% url 'cambiar_estado_plan' plan.id %}" class="btn btn-warning">
+                                    <i class="bi bi-reply"></i> Responder Aclaración
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="col-md-12">
+                                <div class="alert alert-secondary">
+                                    <i class="bi bi-info-circle"></i>
+                                    Su plan está en estado <strong>{{ plan.get_estado_display }}</strong>.
+                                    No hay acciones disponibles en este momento.
+                                </div>
+                            </div>
+                        {% endif %}
+
+                    {% elif es_tecnico or es_gestor %}
+                        <!-- BOTONES PARA TÉCNICO/GESTOR -->
+                        <div class="col-md-12 mb-3">
+                            <h6 class="mb-3">Acciones Disponibles:</h6>
+                            <div class="btn-group" role="group">
+                                {% if plan.estado == 'BORRADOR' or plan.estado == 'ENVIADO' %}
+                                    <a href="{% url 'enviar_carta_evaluacion' plan.id %}" class="btn btn-primary">
+                                        <i class="bi bi-envelope"></i> Enviar Carta de Evaluación
+                                    </a>
+                                {% endif %}
+
+                                {% if plan.estado == 'FIRMADO_ENVIADO' or plan.estado == 'NO_RECIBIDO' %}
+                                    <a href="{% url 'cambiar_estado_plan' plan.id %}" class="btn btn-success">
+                                        <i class="bi bi-check-circle"></i> Confirmar Recepción
+                                    </a>
+                                {% endif %}
+
+                                {% if plan.estado == 'NO_RECIBIDO' %}
+                                    <a href="{% url 'solicitar_aclaracion' plan.id %}" class="btn btn-warning">
+                                        <i class="bi bi-chat-dots"></i> Solicitar Aclaración
+                                    </a>
+                                {% endif %}
+
+                                {% if plan.estado == 'ESPERANDO_APROBACION' %}
+                                    <a href="{% url 'cambiar_estado_plan' plan.id %}" class="btn btn-success">
+                                        <i class="bi bi-check-circle"></i> Aprobar para Radicación
+                                    </a>
+                                    <a href="{% url 'cambiar_estado_plan' plan.id %}" class="btn btn-warning">
+                                        <i class="bi bi-exclamation-triangle"></i> Solicitar Ajustes
+                                    </a>
+                                {% endif %}
+
+                                {% if plan.estado == 'PROCESO_FIRMAS' and es_gestor %}
+                                    <a href="{% url 'marcar_falta_etica' plan.id %}" class="btn btn-danger">
+                                        <i class="bi bi-exclamation-octagon"></i> Marcar Falta de Ética
+                                    </a>
+                                {% endif %}
+
+                                <!-- Botón genérico para cambiar estado -->
+                                <a href="{% url 'cambiar_estado_plan' plan.id %}" class="btn btn-outline-primary">
+                                    <i class="bi bi-arrow-left-right"></i> Cambiar Estado
+                                </a>
+                            </div>
+                        </div>
+
+                    {% elif es_gestor_compras %}
+                        <!-- BOTONES PARA GESTOR DE COMPRAS -->
+                        <div class="col-md-12">
+                            <h6 class="mb-3">Acciones de Radicación:</h6>
+                            {% if plan.estado == 'EN_RADICACION' %}
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    Este plan está listo para ser radicado.
+                                </div>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'radicar_plan' plan.id %}" class="btn btn-success">
+                                        <i class="bi bi-folder-check"></i> Radicar Plan
+                                    </a>
+                                    <a href="{% url 'rechazar_plan' plan.id %}" class="btn btn-danger">
+                                        <i class="bi bi-x-circle"></i> Rechazar
+                                    </a>
+                                </div>
+                            {% elif plan.estado == 'PM_RADICADO' %}
+                                <div class="alert alert-success">
+                                    <i class="bi bi-check-circle"></i>
+                                    Plan radicado con número: <strong>{{ plan.numero_radicado }}</strong>
+                                </div>
+                            {% elif plan.estado == 'RECHAZADO' %}
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i>
+                                    Plan rechazado. Puede proceder a cancelar la radicación.
+                                </div>
+                                <a href="{% url 'cambiar_estado_plan' plan.id %}" class="btn btn-warning">
+                                    <i class="bi bi-x-octagon"></i> Cancelar Radicación
+                                </a>
+                            {% else %}
+                                <div class="alert alert-secondary">
+                                    <i class="bi bi-info-circle"></i>
+                                    Estado: <strong>{{ plan.get_estado_display }}</strong>.
+                                    No hay acciones de radicación disponibles.
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Información adicional del workflow -->
+                <hr>
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <h6>Información del Estado:</h6>
+                        <ul class="small">
+                            <li><strong>Estado Actual:</strong> {{ plan.get_estado_display }}</li>
+                            {% if plan.numero_radicado %}
+                            <li><strong>Número de Radicado:</strong> {{ plan.numero_radicado }}</li>
+                            {% endif %}
+                            {% if plan.dias_sin_respuesta > 0 %}
+                            <li><strong>Días sin Respuesta:</strong> {{ plan.dias_sin_respuesta }}</li>
+                            {% endif %}
+                            {% if plan.proveedor_suspendido %}
+                            <li class="text-danger"><strong>Proveedor Suspendido:</strong> Sí (Falta de Ética)</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FIN DEL SNIPPET -->

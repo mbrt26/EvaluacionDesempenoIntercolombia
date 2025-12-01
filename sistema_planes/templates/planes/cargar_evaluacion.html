@@ -1,0 +1,642 @@
+{% extends 'base.html' %}
+
+{% block title %}Cargar Evaluación{% endblock %}
+
+{% block extra_css %}
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+<style>
+    .select2-container--bootstrap-5 .select2-selection {
+        min-height: 38px;
+    }
+    .hover-bg-light:hover {
+        background-color: #f8f9fa;
+    }
+    .cursor-pointer {
+        cursor: pointer;
+    }
+    .form-check-input:checked + .form-check-label {
+        font-weight: bold;
+        color: #0d6efd;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="bi bi-cloud-upload"></i> Cargar Evaluación Automática</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Información:</strong> Esta funcionalidad permite cargar evaluaciones automáticamente desde SharePoint/PowerApp.
+                </div>
+
+                <form method="post" id="formCargarEvaluacion">
+                    {% csrf_token %}
+
+                    <h5 class="mb-3 p-2 bg-primary text-white rounded"><i class="bi bi-building"></i> Información del Proveedor</h5>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="proveedor_id" class="form-label">Proveedor *</label>
+                            <select class="form-control" id="proveedor_id" name="proveedor_id" required onchange="seleccionarProveedor()">
+                                <option value="">-- Seleccione un proveedor --</option>
+                                {% for proveedor in proveedores %}
+                                <option value="{{ proveedor.id }}"
+                                        data-nit="{{ proveedor.nit }}"
+                                        data-razon-social="{{ proveedor.razon_social }}">
+                                    {{ proveedor.nit }} - {{ proveedor.razon_social }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <input type="hidden" id="nit" name="nit">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo_contrato" class="form-label">Tipo de Contrato *</label>
+                            <select class="form-control" id="tipo_contrato" name="tipo_contrato" required>
+                                <option value="">-- Seleccione tipo de contrato --</option>
+                                <optgroup label="Genéricos">
+                                    <option value="OBRA">Obra</option>
+                                    <option value="SUMINISTRO">Suministro</option>
+                                    <option value="SERVICIO">Prestación de Servicios</option>
+                                    <option value="CONSULTORIA">Consultoría</option>
+                                    <option value="INTERVENTORIA">Interventoría</option>
+                                    <option value="ORDEN_COMPRA">Orden de Compra</option>
+                                </optgroup>
+                                <optgroup label="Sector Eléctrico">
+                                    <option value="OBRAS_CIVILES">Obras Civiles</option>
+                                    <option value="SUMINISTRO_EQUIPOS">Suministro de Equipos</option>
+                                    <option value="MONTAJE_ELECTROMECANICO">Montaje Electromecánico</option>
+                                    <option value="SERVICIOS_TECNICOS">Servicios Técnicos Especializados</option>
+                                    <option value="MANTENIMIENTO">Mantenimiento</option>
+                                    <option value="ESTUDIOS_DISENOS">Estudios y Diseños</option>
+                                    <option value="TRANSPORTE">Transporte</option>
+                                </optgroup>
+                                <option value="OTRO">Otro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="numero_contrato" class="form-label">N° Contrato/Orden *</label>
+                            <input type="text" class="form-control" id="numero_contrato" name="numero_contrato" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="subcategoria" class="form-label">Subcategoría *</label>
+                            <input type="text" class="form-control" id="subcategoria" name="subcategoria" required>
+                        </div>
+                    </div>
+
+                    <!-- Selector de Tipo de Calificación -->
+                    <h5 class="mb-3 mt-4 p-2 bg-warning text-dark rounded"><i class="bi bi-star-fill"></i> Tipo de Evaluación</h5>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="tipo_calificacion" class="form-label">Tipo de Calificación *</label>
+                            <select class="form-control" id="tipo_calificacion" name="tipo_calificacion" required>
+                                <option value="">-- Seleccione el tipo de calificación --</option>
+                            </select>
+                            <div class="form-text">
+                                Seleccione el tipo según si evalúa bienes, servicios, y si incluye SST y/o Ambiental
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contenedor para Criterios Dinámicos -->
+                    <div id="criterios-container" class="mt-4">
+                        <div class="alert alert-warning">
+                            <i class="bi bi-info-circle"></i>
+                            Primero seleccione el <strong>Tipo de Calificación</strong> para cargar los criterios correspondientes.
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="puntaje_total" name="puntaje_total" value="0">
+
+                    <!-- Mensaje condicional según puntaje -->
+                    <div id="mensaje_puntaje" class="mt-3" style="display: none;"></div>
+
+                    <!-- Observaciones Generales -->
+                    <div class="mb-3 mt-3">
+                        <label for="observaciones_generales" class="form-label"><strong>Observaciones Generales</strong></label>
+                        <textarea class="form-control" id="observaciones_generales" name="observaciones_generales"
+                                  rows="4" placeholder="Ingrese observaciones generales sobre la evaluación (opcional)"></textarea>
+                        <small class="text-muted">Campo opcional para comentarios adicionales sobre la evaluación</small>
+                    </div>
+
+                    <script>
+                    // Función para cuando se selecciona un proveedor
+                    function seleccionarProveedor() {
+                        const select = document.getElementById('proveedor_id');
+                        const selectedOption = select.options[select.selectedIndex];
+
+                        if (selectedOption.value) {
+                            const nit = selectedOption.getAttribute('data-nit');
+                            document.getElementById('nit').value = nit;
+                        } else {
+                            document.getElementById('nit').value = '';
+                        }
+                    }
+
+                    // Cargar tipos de calificación al cargar la página
+                    document.addEventListener('DOMContentLoaded', function() {
+                        fetch('{% url "api_tipos_calificacion" %}')
+                            .then(response => response.json())
+                            .then(data => {
+                                const select = document.getElementById('tipo_calificacion');
+                                data.tipos.forEach(tipo => {
+                                    const option = document.createElement('option');
+                                    option.value = tipo.id;
+                                    option.textContent = tipo.nombre;
+                                    option.dataset.codigo = tipo.codigo;
+                                    select.appendChild(option);
+                                });
+                            })
+                            .catch(error => {
+                                console.error('Error cargando tipos de calificación:', error);
+                            });
+                    });
+
+                    // Cuando se selecciona un tipo de calificación
+                    document.getElementById('tipo_calificacion').addEventListener('change', function() {
+                        const tipoId = this.value;
+
+                        if (!tipoId) {
+                            document.getElementById('criterios-container').innerHTML = `
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-info-circle"></i>
+                                    Primero seleccione el <strong>Tipo de Calificación</strong> para cargar los criterios correspondientes.
+                                </div>
+                            `;
+                            return;
+                        }
+
+                        // Mostrar loading
+                        document.getElementById('criterios-container').innerHTML = `
+                            <div class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </div>
+                                <p class="mt-2">Cargando criterios de evaluación...</p>
+                            </div>
+                        `;
+
+                        // Cargar criterios para el tipo seleccionado
+                        fetch(`/api/criterios-tipo/${tipoId}/`)
+                            .then(response => response.json())
+                            .then(data => {
+                                renderizarCriterios(data.criterios);
+                                calcularPuntajeTotal();
+                            })
+                            .catch(error => {
+                                console.error('Error cargando criterios:', error);
+                                document.getElementById('criterios-container').innerHTML = `
+                                    <div class="alert alert-danger">
+                                        <i class="bi bi-exclamation-triangle-fill"></i>
+                                        Error cargando los criterios. Por favor intente nuevamente.
+                                    </div>
+                                `;
+                            });
+                    });
+
+                    function renderizarCriterios(criterios) {
+                        const container = document.getElementById('criterios-container');
+                        let html = '<h5 class="mb-3 p-2 bg-primary text-white rounded">Criterios de Evaluación</h5>';
+                        html += '<div class="alert alert-info"><i class="bi bi-info-circle"></i> Seleccione una opción para cada criterio. El puntaje se asignará automáticamente.</div>';
+
+                        criterios.forEach((criterio, index) => {
+                            // Encontrar el puntaje máximo de este criterio
+                            const puntajeMaximo = Math.max(...criterio.opciones.map(o => o.puntuacion));
+
+                            html += `
+                                <div class="card mb-3 shadow-sm">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-clipboard-check"></i>
+                                            ${criterio.descripcion}
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row mb-3">
+                                            <div class="col-md-3">
+                                                <label class="form-label fw-bold">Puntaje Máximo</label>
+                                                <input type="number" class="form-control text-center bg-light"
+                                                       value="${puntajeMaximo}" readonly>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label fw-bold">Calificación Obtenida *</label>
+                                                <input type="number"
+                                                       class="form-control text-center bg-secondary text-white fw-bold criterio-puntaje-display"
+                                                       id="criterio_${criterio.id_criterio}_display"
+                                                       value="0"
+                                                       readonly>
+                                                <input type="hidden"
+                                                       class="criterio-puntaje"
+                                                       name="criterio_${criterio.id_criterio}_puntaje"
+                                                       id="criterio_${criterio.id_criterio}_puntaje"
+                                                       value="0">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold">Observaciones</label>
+                                                <input type="text"
+                                                       class="form-control"
+                                                       name="criterio_${criterio.id_criterio}_obs"
+                                                       placeholder="Observaciones del criterio (opcional)">
+                                            </div>
+                                        </div>
+
+                                        <!-- Opciones de evaluación como radio buttons -->
+                                        <div class="mt-3">
+                                            <label class="form-label fw-bold"><i class="bi bi-list-ul"></i> Opciones de evaluación: *</label>
+                            `;
+
+                            // Ordenar opciones de mayor a menor puntaje
+                            const opcionesOrdenadas = [...criterio.opciones].sort((a, b) => b.puntuacion - a.puntuacion);
+
+                            opcionesOrdenadas.forEach((opcion, opcionIndex) => {
+                                html += `
+                                    <div class="form-check mb-2 p-3 border rounded hover-bg-light">
+                                        <input class="form-check-input"
+                                               type="radio"
+                                               name="criterio_${criterio.id_criterio}_opcion"
+                                               id="criterio_${criterio.id_criterio}_opcion_${opcionIndex}"
+                                               value="${opcion.puntuacion}"
+                                               data-criterio="${criterio.id_criterio}"
+                                               required
+                                               onchange="actualizarPuntajeCriterio(${criterio.id_criterio}, ${opcion.puntuacion})">
+                                        <label class="form-check-label w-100 cursor-pointer"
+                                               for="criterio_${criterio.id_criterio}_opcion_${opcionIndex}">
+                                            <span class="badge bg-primary me-2 fs-6">${opcion.puntuacion} pts</span>
+                                            <strong>${opcion.respuesta_corta || opcion.respuesta_normal}</strong>
+                                        </label>
+                                    </div>
+                                `;
+                            });
+
+                            html += `
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+
+                        // Agregar resumen de puntaje
+                        html += `
+                            <div class="card bg-light shadow">
+                                <div class="card-body text-center">
+                                    <h4 class="mb-0">
+                                        Puntaje Total: <span id="puntaje-display" class="badge bg-secondary fs-3">0</span> / 100
+                                    </h4>
+                                    <div id="estado-evaluacion" class="mt-2"></div>
+                                </div>
+                            </div>
+                        `;
+
+                        container.innerHTML = html;
+                    }
+
+                    function actualizarPuntajeCriterio(criterioId, puntuacion) {
+                        // Actualizar el campo visible
+                        const displayInput = document.getElementById(`criterio_${criterioId}_display`);
+                        if (displayInput) {
+                            displayInput.value = puntuacion;
+
+                            // Obtener el puntaje máximo del criterio (del campo readonly)
+                            const card = displayInput.closest('.card-body');
+                            const maxInput = card.querySelector('input[readonly]');
+                            const puntajeMaximo = maxInput ? parseFloat(maxInput.value) : 100;
+
+                            // Calcular porcentaje
+                            const porcentaje = (puntuacion / puntajeMaximo) * 100;
+
+                            // Aplicar color según porcentaje
+                            displayInput.classList.remove('bg-success', 'bg-warning', 'bg-danger', 'bg-secondary', 'text-white', 'text-dark');
+
+                            if (puntuacion === 0) {
+                                // Gris - Sin calificar
+                                displayInput.classList.add('bg-secondary', 'text-white');
+                            } else if (porcentaje >= 80) {
+                                // Verde - Satisfactorio (≥80%)
+                                displayInput.classList.add('bg-success', 'text-white');
+                            } else if (porcentaje >= 60) {
+                                // Amarillo - Aceptable (60-79%)
+                                displayInput.classList.add('bg-warning', 'text-dark');
+                            } else {
+                                // Rojo - Crítico (<60%)
+                                displayInput.classList.add('bg-danger', 'text-white');
+                            }
+                        }
+
+                        // Actualizar el campo oculto
+                        const hiddenInput = document.getElementById(`criterio_${criterioId}_puntaje`);
+                        if (hiddenInput) {
+                            hiddenInput.value = puntuacion;
+                        }
+
+                        // Recalcular el total
+                        calcularPuntajeTotal();
+                    }
+
+                    function calcularPuntajeTotal() {
+                        let total = 0;
+                        const inputs = document.querySelectorAll('.criterio-puntaje');
+
+                        inputs.forEach(input => {
+                            const valor = parseFloat(input.value) || 0;
+                            total += valor;
+                        });
+
+                        // Redondear a 2 decimales
+                        total = Math.round(total * 100) / 100;
+
+                        const displayBadge = document.getElementById('puntaje-display');
+                        const estadoDiv = document.getElementById('estado-evaluacion');
+                        const mensajeDiv = document.getElementById('mensaje_puntaje');
+                        const submitBtn = document.querySelector('button[type="submit"]');
+
+                        if (displayBadge) {
+                            displayBadge.textContent = total.toFixed(2);
+
+                            // Actualizar color del badge según puntaje
+                            displayBadge.className = 'badge fs-3';
+                            if (total >= 80) {
+                                displayBadge.classList.add('bg-success');
+                            } else if (total >= 60) {
+                                displayBadge.classList.add('bg-warning');
+                            } else if (total > 0) {
+                                displayBadge.classList.add('bg-danger');
+                            } else {
+                                displayBadge.classList.add('bg-secondary');
+                            }
+                        }
+
+                        // Actualizar estado
+                        if (estadoDiv) {
+                            if (total === 0) {
+                                estadoDiv.innerHTML = '';
+                            } else if (total < 60) {
+                                estadoDiv.innerHTML = '<span class="badge bg-danger fs-6">🔴 DESEMPEÑO CRÍTICO</span>';
+                            } else if (total < 80) {
+                                estadoDiv.innerHTML = '<span class="badge bg-warning fs-6">🟡 DESEMPEÑO ACEPTABLE</span>';
+                            } else {
+                                estadoDiv.innerHTML = '<span class="badge bg-success fs-6">🟢 DESEMPEÑO SATISFACTORIO</span>';
+                            }
+                        }
+
+                        // Actualizar campo oculto
+                        document.getElementById('puntaje_total').value = total;
+
+                        // Mostrar mensaje condicional según puntaje
+                        if (mensajeDiv && submitBtn) {
+                            if (total < 60) {
+                                mensajeDiv.innerHTML = `
+                                    <div class="alert alert-danger">
+                                        <i class="bi bi-exclamation-triangle-fill"></i>
+                                        <strong>Atención:</strong> Este contrato tiene calificación inferior a 60 y el plan de mejoramiento requiere aval de un tercero.
+                                    </div>
+                                `;
+                                mensajeDiv.style.display = 'block';
+                                submitBtn.disabled = false;
+                                submitBtn.classList.remove('btn-secondary');
+                                submitBtn.classList.add('btn-success');
+                            } else if (total < 80) {
+                                mensajeDiv.innerHTML = `
+                                    <div class="alert alert-warning">
+                                        <i class="bi bi-exclamation-circle-fill"></i>
+                                        <strong>Información:</strong> Requiere plan de mejoramiento.
+                                    </div>
+                                `;
+                                mensajeDiv.style.display = 'block';
+                                submitBtn.disabled = false;
+                                submitBtn.classList.remove('btn-secondary');
+                                submitBtn.classList.add('btn-success');
+                            } else if (total >= 80 && total <= 100) {
+                                mensajeDiv.innerHTML = `
+                                    <div class="alert alert-info border-info">
+                                        <i class="bi bi-info-circle-fill"></i>
+                                        <strong>Evaluación Satisfactoria (≥80):</strong> Esta evaluación NO requiere plan de mejoramiento.<br>
+                                        <strong>⚠️ No es necesario cargarla al sistema.</strong><br>
+                                        <small class="text-muted">Solo se deben cargar evaluaciones que requieran planes de mejoramiento (puntaje &lt; 80).</small>
+                                    </div>
+                                `;
+                                mensajeDiv.style.display = 'block';
+                                submitBtn.disabled = true;
+                                submitBtn.classList.add('btn-secondary');
+                                submitBtn.classList.remove('btn-success');
+                            } else {
+                                mensajeDiv.style.display = 'none';
+                                submitBtn.disabled = false;
+                                submitBtn.classList.remove('btn-secondary');
+                                submitBtn.classList.add('btn-success');
+                            }
+                        }
+                    }
+                    </script>
+
+                    <h5 class="mb-3 mt-4 p-2 bg-info text-white rounded"><i class="bi bi-check-circle"></i> Aprobaciones Requeridas</h5>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-primary h-100">
+                                <div class="card-body">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" role="switch"
+                                               id="requiere_aprobacion_sst" name="requiere_aprobacion_sst"
+                                               value="true" style="width: 3em; height: 1.5em;">
+                                        <label class="form-check-label ms-2" for="requiere_aprobacion_sst">
+                                            <i class="bi bi-shield-check text-primary"></i>
+                                            <strong>Requiere Aprobación SST</strong>
+                                            <br>
+                                            <small class="text-muted">Seguridad y Salud en el Trabajo</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-success h-100">
+                                <div class="card-body">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" role="switch"
+                                               id="requiere_aprobacion_ambiental" name="requiere_aprobacion_ambiental"
+                                               value="true" style="width: 3em; height: 1.5em;">
+                                        <label class="form-check-label ms-2" for="requiere_aprobacion_ambiental">
+                                            <i class="bi bi-tree text-success"></i>
+                                            <strong>Requiere Aprobación Ambiental</strong>
+                                            <br>
+                                            <small class="text-muted">Gestión Ambiental y Social</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3 mt-4 p-2 bg-secondary text-white rounded"><i class="bi bi-calendar-event"></i> Información del Plan</h5>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="tecnico_id" class="form-label">Técnico Responsable *</label>
+                            <select class="form-control" id="tecnico_id" name="tecnico_id" required>
+                                <option value="">-- Seleccione un técnico --</option>
+                                {% for tecnico in tecnicos %}
+                                <option value="{{ tecnico.id }}">
+                                    {{ tecnico.get_full_name|default:tecnico.username }}
+                                    {% if tecnico.email %} - {{ tecnico.email }}{% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="estado" class="form-label">Estado *</label>
+                            <select class="form-control" id="estado" name="estado" required>
+                                <option value="">-- Seleccione un estado --</option>
+                                <option value="BORRADOR" selected>Borrador</option>
+                                <option value="ENVIADO">Enviado</option>
+                                <option value="FIRMADO_ENVIADO">Firmado y Enviado</option>
+                                <option value="EN_REVISION">En Revisión</option>
+                                <option value="ESPERANDO_APROBACION">Esperando Aprobación</option>
+                                <option value="SOLICITUD_AJUSTES">Solicitud de Ajustes</option>
+                                <option value="REQUIERE_AJUSTES">Requiere Ajustes</option>
+                                <option value="DOCUMENTOS_REEVALUADOS">Documentos Reevaluados</option>
+                                <option value="APROBADO">Aprobado</option>
+                                <option value="RECHAZADO">Rechazado</option>
+                            </select>
+                            <small class="text-muted">Por defecto: Borrador</small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha_limite_aclaracion" class="form-label">Fecha Límite Aclaración</label>
+                            <input type="date" class="form-control" id="fecha_limite_aclaracion" name="fecha_limite_aclaracion">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha_limite_plan" class="form-label">Fecha Límite Plan</label>
+                            <input type="date" class="form-control" id="fecha_limite_plan" name="fecha_limite_plan">
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'gestor_registros' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Cargar Evaluación
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- jQuery (requerido para Select2) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Select2 JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    // Inicializar Select2 en los campos de proveedor y técnico
+    $(document).ready(function() {
+        $('#proveedor_id').select2({
+            theme: 'bootstrap-5',
+            placeholder: '-- Seleccione un proveedor --',
+            allowClear: true,
+            width: '100%',
+            language: {
+                noResults: function() {
+                    return "No se encontraron resultados";
+                },
+                searching: function() {
+                    return "Buscando...";
+                }
+            }
+        });
+
+        $('#tecnico_id').select2({
+            theme: 'bootstrap-5',
+            placeholder: '-- Seleccione un técnico --',
+            allowClear: true,
+            width: '100%',
+            language: {
+                noResults: function() {
+                    return "No se encontraron resultados";
+                },
+                searching: function() {
+                    return "Buscando...";
+                }
+            }
+        });
+
+        $('#tipo_contrato').select2({
+            theme: 'bootstrap-5',
+            placeholder: '-- Seleccione tipo de contrato --',
+            allowClear: true,
+            width: '100%',
+            language: {
+                noResults: function() {
+                    return "No se encontraron resultados";
+                },
+                searching: function() {
+                    return "Buscando...";
+                }
+            }
+        });
+
+        // Actualizar el NIT cuando cambia la selección
+        $('#proveedor_id').on('select2:select', function(e) {
+            seleccionarProveedor();
+        });
+
+        $('#proveedor_id').on('select2:clear', function(e) {
+            document.getElementById('nit').value = '';
+        });
+
+        // Manejar envío del formulario
+        $('#formCargarEvaluacion').on('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const submitBtn = $(this).find('button[type="submit"]');
+            const btnOriginalText = submitBtn.html();
+
+            // Deshabilitar botón y mostrar loading
+            submitBtn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Cargando...');
+
+            $.ajax({
+                url: '',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success) {
+                        // Mostrar mensaje de éxito
+                        alert('✓ Evaluación cargada exitosamente');
+                        // Redirigir al listado
+                        window.location.href = "{% url 'gestor_registros' %}";
+                    } else {
+                        alert('✗ Error: ' + response.error);
+                        submitBtn.prop('disabled', false).html(btnOriginalText);
+                    }
+                },
+                error: function(xhr) {
+                    const errorMsg = xhr.responseJSON?.error || 'Error al procesar la solicitud';
+                    alert('✗ Error: ' + errorMsg);
+                    submitBtn.prop('disabled', false).html(btnOriginalText);
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

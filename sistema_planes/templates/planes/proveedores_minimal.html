@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+
+{% block title %}Lista de Proveedores - Sistema de Planes{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: white;
+        border: 1px solid #ddd;
+        border-left: 4px solid;
+        padding: 15px;
+        border-radius: 4px;
+        text-align: center;
+    }
+
+    .stat-card.blue { border-left-color: #3498db; }
+    .stat-card.red { border-left-color: #e74c3c; }
+    .stat-card.yellow { border-left-color: #f39c12; }
+    .stat-card.green { border-left-color: #27ae60; }
+
+    .stat-number {
+        font-size: 28px;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+
+    .stat-label {
+        color: #7f8c8d;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">📋 Lista de Proveedores y Evaluaciones</h1>
+
+<!-- Estadísticas -->
+<div class="stats">
+    <div class="stat-card blue">
+        <div class="stat-number">{{ estadisticas.total }}</div>
+        <div class="stat-label">Total Proveedores</div>
+    </div>
+    <div class="stat-card red">
+        <div class="stat-number">{{ estadisticas.requieren_plan }}</div>
+        <div class="stat-label">Requieren Plan</div>
+    </div>
+    <div class="stat-card yellow">
+        <div class="stat-number">{{ estadisticas.pendientes }}</div>
+        <div class="stat-label">Planes Pendientes</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-number">{{ estadisticas.aprobados }}</div>
+        <div class="stat-label">Planes Aprobados</div>
+    </div>
+</div>
+
+<h2>📊 Listado de Proveedores</h2>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label"><strong>Proveedor (Razón Social o NIT)</strong></label>
+                <input type="text" name="proveedor" class="form-control" placeholder="Buscar proveedor..." value="{{ filtros.proveedor }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label"><strong>Categoría</strong></label>
+                <select name="categoria" class="form-select">
+                    <option value="">Todas</option>
+                    <option value="critica" {% if filtros.categoria == 'critica' %}selected{% endif %}>Crítica (&lt;60)</option>
+                    <option value="aceptable" {% if filtros.categoria == 'aceptable' %}selected{% endif %}>Aceptable (60-79)</option>
+                    <option value="satisfactoria" {% if filtros.categoria == 'satisfactoria' %}selected{% endif %}>Satisfactoria (≥80)</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label"><strong>Estado Plan</strong></label>
+                <select name="estado_plan" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="SIN_PLAN" {% if filtros.estado_plan == 'SIN_PLAN' %}selected{% endif %}>Sin Plan</option>
+                    <option value="NO_REQUIERE" {% if filtros.estado_plan == 'NO_REQUIERE' %}selected{% endif %}>No Requiere</option>
+                    <option value="BORRADOR" {% if filtros.estado_plan == 'BORRADOR' %}selected{% endif %}>Borrador</option>
+                    <option value="ENVIADO" {% if filtros.estado_plan == 'ENVIADO' %}selected{% endif %}>Enviado</option>
+                    <option value="EN_REVISION" {% if filtros.estado_plan == 'EN_REVISION' %}selected{% endif %}>En Revisión</option>
+                    <option value="REQUIERE_AJUSTES" {% if filtros.estado_plan == 'REQUIERE_AJUSTES' %}selected{% endif %}>Requiere Ajustes</option>
+                    <option value="APROBADO" {% if filtros.estado_plan == 'APROBADO' %}selected{% endif %}>Aprobado</option>
+                    <option value="RECHAZADO" {% if filtros.estado_plan == 'RECHAZADO' %}selected{% endif %}>Rechazado</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label"><strong>Requiere Plan</strong></label>
+                <select name="requiere_plan" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="si" {% if filtros.requiere_plan == 'si' %}selected{% endif %}>Sí</option>
+                    <option value="no" {% if filtros.requiere_plan == 'no' %}selected{% endif %}>No</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+                {% if filtros.proveedor or filtros.categoria or filtros.estado_plan or filtros.requiere_plan %}
+                <a href="{% url 'tecnico_proveedores' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Limpiar
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Proveedor</th>
+                <th class="text-center">Fecha Límite Aclaración</th>
+                <th class="text-center">Fecha Límite Plan</th>
+                <th class="text-center">Puntaje</th>
+                <th class="text-center">Desglose</th>
+                <th class="text-center">Estado Plan</th>
+                <th class="text-center">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in datos %}
+            <tr>
+                <td>
+                    <strong style="color: #2c3e50;">{{ item.proveedor.razon_social }}</strong><br>
+                    <small class="text-muted">NIT: {{ item.proveedor.nit }}</small><br>
+                    <small class="text-muted">📧 {{ item.proveedor.email }}</small>
+                </td>
+                <td class="text-center">
+                    {% if item.evaluacion.fecha_limite_aclaracion %}
+                        <small>{{ item.evaluacion.fecha_limite_aclaracion|date:"d/m/Y" }}</small>
+                    {% else %}
+                        <small class="text-muted">—</small>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    {% if item.evaluacion.fecha_limite_plan %}
+                        <small>{{ item.evaluacion.fecha_limite_plan|date:"d/m/Y" }}</small>
+                    {% else %}
+                        <small class="text-muted">—</small>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    <span class="badge {% if item.evaluacion.puntaje >= 80 %}bg-success{% elif item.evaluacion.puntaje >= 60 %}bg-warning text-dark{% else %}bg-danger{% endif %}" style="font-size: 16px; padding: 8px 12px;">
+                        {{ item.evaluacion.puntaje }}
+                    </span>
+                </td>
+                <td class="text-center">
+                    <span class="badge {% if item.evaluacion.puntaje_gestion >= 20 %}bg-success{% elif item.evaluacion.puntaje_gestion >= 15 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                        G:{{ item.evaluacion.puntaje_gestion }}
+                    </span>
+                    <span class="badge {% if item.evaluacion.puntaje_calidad >= 20 %}bg-success{% elif item.evaluacion.puntaje_calidad >= 15 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                        C:{{ item.evaluacion.puntaje_calidad }}
+                    </span>
+                    <span class="badge {% if item.evaluacion.puntaje_oportunidad >= 20 %}bg-success{% elif item.evaluacion.puntaje_oportunidad >= 15 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                        O:{{ item.evaluacion.puntaje_oportunidad }}
+                    </span>
+                    <span class="badge {% if item.evaluacion.puntaje_ambiental_social >= 20 %}bg-success{% elif item.evaluacion.puntaje_ambiental_social >= 15 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                        A:{{ item.evaluacion.puntaje_ambiental_social }}
+                    </span>
+                    <span class="badge {% if item.evaluacion.puntaje_sst >= 20 %}bg-success{% elif item.evaluacion.puntaje_sst >= 15 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                        S:{{ item.evaluacion.puntaje_sst }}
+                    </span>
+                </td>
+                <td class="text-center">
+                    {% if item.plan %}
+                        {% if item.plan.estado == 'APROBADO' %}
+                            <span class="badge bg-success">✓ APROBADO</span>
+                        {% elif item.plan.estado == 'RECHAZADO' %}
+                            <span class="badge bg-dark">✗ RECHAZADO</span>
+                        {% elif item.plan.estado == 'ENVIADO' %}
+                            <span class="badge bg-info">→ ENVIADO</span>
+                        {% elif item.plan.estado == 'REQUIERE_AJUSTES' %}
+                            <span class="badge bg-danger">! AJUSTES</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ item.plan.get_estado_display }}</span>
+                        {% endif %}
+                        {% if item.plan.fecha_envio %}
+                        <br><small class="text-muted">{{ item.plan.fecha_envio|date:"d/m/Y" }}</small>
+                        {% endif %}
+                    {% else %}
+                        {% if item.requiere_plan %}
+                            <span class="badge bg-secondary">⚠ SIN PLAN</span>
+                            <br><small class="text-danger">Requerido</small>
+                        {% else %}
+                            <span class="badge bg-secondary">— NO REQUIERE</span>
+                        {% endif %}
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    {% if item.plan %}
+                        <a href="{% url 'proveedor_ver_evaluacion' item.evaluacion.id %}" class="btn btn-primary btn-sm">
+                            {% if item.plan.estado == 'ENVIADO' %}✓ Revisar{% else %}📄 Ver Evaluación{% endif %}
+                        </a>
+                    {% else %}
+                        <a href="{% url 'proveedor_ver_evaluacion' item.evaluacion.id %}" class="btn btn-outline-secondary btn-sm">📄 Ver Evaluación</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center py-5">
+                    <div style="font-size: 48px;">📭</div>
+                    <p class="text-muted">No se encontraron proveedores con evaluaciones</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

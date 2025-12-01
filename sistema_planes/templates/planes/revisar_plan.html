@@ -1,0 +1,421 @@
+{% extends 'base.html' %}
+
+{% block title %}Revisar Plan - {{ plan.proveedor.razon_social }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'panel_tecnico' %}">Panel Técnico</a></li>
+                <li class="breadcrumb-item active">{% if es_modo_lectura %}Ver Plan{% else %}Revisar Plan{% endif %}</li>
+            </ol>
+        </nav>
+        <h2>{% if es_modo_lectura %}Ver Plan de Mejoramiento{% else %}Revisar Plan de Mejoramiento{% endif %}</h2>
+    </div>
+</div>
+
+<!-- Información del Proveedor y Evaluación -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-building"></i> Información del Proveedor
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <th width="40%">Razón Social:</th>
+                        <td>{{ plan.proveedor.razon_social }}</td>
+                    </tr>
+                    <tr>
+                        <th>NIT:</th>
+                        <td>{{ plan.proveedor.nit }}</td>
+                    </tr>
+                    <tr>
+                        <th>Email:</th>
+                        <td>{{ plan.proveedor.email }}</td>
+                    </tr>
+                    <tr>
+                        <th>Teléfono:</th>
+                        <td>{{ plan.proveedor.telefono }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0">
+                    <i class="bi bi-clipboard-data"></i> Evaluación de Desempeño
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <th width="40%">Período:</th>
+                        <td>{{ plan.evaluacion.periodo }}</td>
+                    </tr>
+                    <tr>
+                        <th>Puntaje Total:</th>
+                        <td>
+                            <span class="badge bg-danger fs-6">{{ plan.evaluacion.puntaje }}/100</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Fecha Evaluación:</th>
+                        <td>{{ plan.evaluacion.fecha|date:"d/m/Y" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Estado del Plan:</th>
+                        <td>
+                            {% if plan.estado == 'ENVIADO' %}
+                                <span class="badge bg-info">ENVIADO</span>
+                            {% elif plan.estado == 'EN_REVISION' %}
+                                <span class="badge bg-warning">EN REVISIÓN</span>
+                            {% elif plan.estado == 'APROBADO' %}
+                                <span class="badge bg-success">APROBADO</span>
+                            {% elif plan.estado == 'RECHAZADO' %}
+                                <span class="badge bg-danger">RECHAZADO</span>
+                            {% elif plan.estado == 'REQUIERE_AJUSTES' %}
+                                <span class="badge bg-warning">REQUIERE AJUSTES</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ plan.get_estado_display }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Desglose de Puntajes -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-graph-down"></i> Desglose de Evaluación
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col-md-3">
+                <div class="border rounded p-3 {% if plan.evaluacion.puntaje_calidad < 60 %}bg-danger text-white{% elif plan.evaluacion.puntaje_calidad < 80 %}bg-warning{% else %}bg-success text-white{% endif %}">
+                    <h6>Calidad</h6>
+                    <h3>{{ plan.evaluacion.puntaje_calidad|default:0 }}%</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 {% if plan.evaluacion.puntaje_entrega < 60 %}bg-danger text-white{% elif plan.evaluacion.puntaje_entrega < 80 %}bg-warning{% else %}bg-success text-white{% endif %}">
+                    <h6>Entrega</h6>
+                    <h3>{{ plan.evaluacion.puntaje_entrega|default:0 }}%</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 {% if plan.evaluacion.puntaje_documentacion < 60 %}bg-danger text-white{% elif plan.evaluacion.puntaje_documentacion < 80 %}bg-warning{% else %}bg-success text-white{% endif %}">
+                    <h6>Documentación</h6>
+                    <h3>{{ plan.evaluacion.puntaje_documentacion|default:0 }}%</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 {% if plan.evaluacion.puntaje_precio < 60 %}bg-danger text-white{% elif plan.evaluacion.puntaje_precio < 80 %}bg-warning{% else %}bg-success text-white{% endif %}">
+                    <h6>Precio</h6>
+                    <h3>{{ plan.evaluacion.puntaje_precio|default:0 }}%</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contenido del Plan -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+            <i class="bi bi-file-text"></i> Plan de Mejoramiento Propuesto
+        </h5>
+    </div>
+    <div class="card-body">
+        <!-- Análisis de Causa Raíz -->
+        <div class="mb-4">
+            <h6 class="fw-bold">1. Análisis de Causa Raíz</h6>
+            <div class="border rounded p-3 bg-light">
+                {{ plan.analisis_causa|linebreaks }}
+            </div>
+        </div>
+        
+        <!-- Acciones Propuestas -->
+        <div class="mb-4">
+            <h6 class="fw-bold">2. Acciones Propuestas</h6>
+            <div class="border rounded p-3 bg-light">
+                {{ plan.acciones_propuestas|linebreaks }}
+            </div>
+        </div>
+        
+        <!-- Información General -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h6 class="fw-bold">3. Responsable General</h6>
+                <p class="border rounded p-2 bg-light">{{ plan.responsable }}</p>
+            </div>
+            <div class="col-md-6">
+                <h6 class="fw-bold">4. Fecha de Implementación</h6>
+                <p class="border rounded p-2 bg-light">{{ plan.fecha_implementacion|date:"d/m/Y" }}</p>
+            </div>
+        </div>
+        
+        <!-- Indicadores de Seguimiento -->
+        <div class="mb-4">
+            <h6 class="fw-bold">5. Indicadores de Seguimiento</h6>
+            <div class="border rounded p-3 bg-light">
+                {{ plan.indicadores_seguimiento|linebreaks }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Acciones de Mejora Detalladas -->
+{% if acciones %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-list-check"></i> Acciones de Mejora Específicas
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Descripción de la Acción</th>
+                        <th>Responsable</th>
+                        <th>Fecha Compromiso</th>
+                        <th>Indicador de Éxito</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for accion in acciones %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ accion.descripcion }}</td>
+                        <td>{{ accion.responsable }}</td>
+                        <td>
+                            <span class="{% if accion.esta_vencida %}text-danger fw-bold{% endif %}">
+                                {{ accion.fecha_compromiso|date:"d/m/Y" }}
+                            </span>
+                        </td>
+                        <td>{{ accion.indicador|default:"No especificado" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Documentos Adjuntos -->
+{% if documentos %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-paperclip"></i> Documentos Adjuntos
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="list-group">
+            {% for doc in documentos %}
+            <a href="{{ doc.archivo.url }}" class="list-group-item list-group-item-action" target="_blank">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">
+                        <i class="bi bi-file-earmark-text"></i> {{ doc.nombre }}
+                    </h6>
+                    <small>{{ doc.fecha_carga|date:"d/m/Y H:i" }}</small>
+                </div>
+                {% if doc.descripcion %}
+                <p class="mb-1 text-muted">{{ doc.descripcion }}</p>
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Historial de Versiones -->
+{% if plan.numero_version > 1 %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-clock-history"></i> Información de Versión
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> Este es la versión <strong>{{ plan.numero_version }}</strong> del plan.
+            {% if plan.fecha_ultima_modificacion %}
+            Última modificación: {{ plan.fecha_ultima_modificacion|date:"d/m/Y H:i" }}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Formulario de Decisión -->
+{% if not es_modo_lectura %}
+<div class="card border-primary">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+            <i class="bi bi-check2-square"></i> Tomar Decisión sobre el Plan
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" id="decisionForm">
+            {% csrf_token %}
+            
+            <!-- Decisión -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Decisión <span class="text-danger">*</span></label>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="decision" id="aprobar" value="APROBADO" required>
+                            <label class="form-check-label text-success fw-bold" for="aprobar">
+                                <i class="bi bi-check-circle"></i> APROBAR
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="decision" id="ajustes" value="REQUIERE_AJUSTES" required>
+                            <label class="form-check-label text-warning fw-bold" for="ajustes">
+                                <i class="bi bi-exclamation-triangle"></i> SOLICITAR AJUSTES
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="decision" id="rechazar" value="RECHAZADO" required>
+                            <label class="form-check-label text-danger fw-bold" for="rechazar">
+                                <i class="bi bi-x-circle"></i> RECHAZAR
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Comentarios -->
+            <div class="mb-3">
+                <label for="comentarios" class="form-label fw-bold">
+                    Comentarios/Observaciones <span class="text-danger">*</span>
+                </label>
+                <textarea name="comentarios" 
+                          id="comentarios" 
+                          class="form-control" 
+                          rows="5" 
+                          required
+                          placeholder="Ingrese sus observaciones sobre el plan. Si solicita ajustes, sea específico sobre qué necesita mejorar."></textarea>
+                <small class="text-muted">
+                    Estos comentarios serán visibles para el proveedor.
+                </small>
+            </div>
+            
+            <!-- Criterios de Evaluación (ayuda visual) -->
+            <div class="alert alert-info">
+                <h6><i class="bi bi-info-circle"></i> Criterios de Evaluación Sugeridos</h6>
+                <ul class="mb-0">
+                    <li><strong>Aprobar:</strong> El plan aborda adecuadamente las deficiencias identificadas, con acciones claras y medibles.</li>
+                    <li><strong>Solicitar Ajustes:</strong> El plan necesita mayor detalle, indicadores más específicos o fechas más realistas.</li>
+                    <li><strong>Rechazar:</strong> El plan no es viable o no aborda las causas raíz de los problemas identificados.</li>
+                </ul>
+            </div>
+            
+            <!-- Botones de Acción -->
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'panel_tecnico' %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver al Panel
+                </a>
+                <button type="submit" class="btn btn-primary btn-lg" onclick="return confirmarDecision()">
+                    <i class="bi bi-send"></i> Enviar Decisión
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function confirmarDecision() {
+    const decision = document.querySelector('input[name="decision"]:checked');
+    const comentarios = document.getElementById('comentarios').value;
+    
+    if (!decision) {
+        alert('Por favor seleccione una decisión');
+        return false;
+    }
+    
+    if (!comentarios || comentarios.trim().length < 10) {
+        alert('Por favor ingrese comentarios más detallados (mínimo 10 caracteres)');
+        return false;
+    }
+    
+    let mensaje = '';
+    if (decision.value === 'APROBADO') {
+        mensaje = '¿Está seguro de APROBAR este plan de mejoramiento?';
+    } else if (decision.value === 'REQUIERE_AJUSTES') {
+        mensaje = '¿Está seguro de SOLICITAR AJUSTES en este plan?';
+    } else if (decision.value === 'RECHAZADO') {
+        mensaje = '¿Está seguro de RECHAZAR este plan? Esta acción es definitiva.';
+    }
+    
+    return confirm(mensaje);
+}
+
+// Cambiar color del textarea según la decisión seleccionada
+document.querySelectorAll('input[name="decision"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const comentarios = document.getElementById('comentarios');
+        comentarios.classList.remove('border-success', 'border-warning', 'border-danger');
+        
+        if (this.value === 'APROBADO') {
+            comentarios.classList.add('border-success');
+            comentarios.placeholder = 'Felicitaciones por el plan presentado. Especifique los aspectos positivos...';
+        } else if (this.value === 'REQUIERE_AJUSTES') {
+            comentarios.classList.add('border-warning');
+            comentarios.placeholder = 'Especifique claramente qué ajustes necesita el plan...';
+        } else if (this.value === 'RECHAZADO') {
+            comentarios.classList.add('border-danger');
+            comentarios.placeholder = 'Explique las razones del rechazo...';
+        }
+    });
+});
+</script>
+{% endif %}
+
+<!-- Mostrar comentarios del técnico si el plan ya fue decidido -->
+{% if es_modo_lectura and plan.comentarios_tecnico %}
+<div class="card mb-4 border-info">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0">
+            <i class="bi bi-chat-left-text"></i> Comentarios del Técnico
+        </h5>
+    </div>
+    <div class="card-body">
+        <p>{{ plan.comentarios_tecnico|linebreaks }}</p>
+        {% if plan.revisado_por %}
+        <hr>
+        <small class="text-muted">
+            Revisado por: <strong>{{ plan.revisado_por.get_full_name|default:plan.revisado_por.username }}</strong>
+            {% if plan.fecha_revision %}
+            el {{ plan.fecha_revision|date:"d/m/Y H:i" }}
+            {% endif %}
+        </small>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

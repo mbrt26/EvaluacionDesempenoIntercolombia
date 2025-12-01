@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}Marcar Falta de Ética{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="bi bi-exclamation-octagon text-danger"></i> Marcar Falta de Ética</h2>
+        <p class="text-muted">{{ plan.proveedor.razon_social }} - {{ plan.evaluacion.periodo }}</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="alert alert-danger">
+            <h5><i class="bi bi-exclamation-triangle"></i> ADVERTENCIA CRÍTICA</h5>
+            <p>Esta acción marcará al proveedor con <strong>FALTA DE ÉTICA</strong> y resultará en:</p>
+            <ul>
+                <li>Suspensión del proveedor por <strong>5 años</strong></li>
+                <li>Imposibilidad de participar en licitaciones</li>
+                <li>Registro permanente en el historial del proveedor</li>
+                <li>Notificación a las autoridades competentes</li>
+            </ul>
+            <p class="mb-0"><strong>Esta acción NO se puede deshacer.</strong></p>
+        </div>
+
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">Confirmar Suspensión por Falta de Ética</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="motivo" class="form-label">Motivo de la Sanción *</label>
+                        <textarea class="form-control" id="motivo" name="motivo" rows="5" required
+                                  placeholder="Describa detalladamente el motivo de la sanción por falta de ética..."></textarea>
+                        <div class="form-text">Documente claramente las razones de esta decisión</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="confirmacion" class="form-label">
+                            Confirmación *
+                        </label>
+                        <p class="text-danger small">
+                            Para confirmar esta acción, escriba la palabra <strong>SUSPENDER</strong> en el campo de abajo:
+                        </p>
+                        <input type="text" class="form-control" id="confirmacion" name="confirmacion"
+                               required placeholder="Escriba: SUSPENDER">
+                    </div>
+
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" id="acepto" required>
+                        <label class="form-check-label" for="acepto">
+                            Confirmo que he revisado toda la evidencia y que esta decisión es definitiva
+                        </label>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger btn-lg">
+                            <i class="bi bi-exclamation-octagon"></i> Suspender Proveedor
+                        </button>
+                        <a href="{% url 'ver_plan' plan.id %}" class="btn btn-secondary btn-lg">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header bg-dark text-white">
+                <h6 class="mb-0">Datos del Proveedor</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Razón Social:</strong><br>{{ plan.proveedor.razon_social }}</p>
+                <p><strong>NIT:</strong><br>{{ plan.proveedor.nit }}</p>
+                <p><strong>Email:</strong><br>{{ plan.proveedor.email }}</p>
+                <p><strong>Estado:</strong><br>
+                    {% if plan.proveedor.activo %}
+                    <span class="badge bg-success">Activo</span>
+                    {% else %}
+                    <span class="badge bg-danger">Inactivo</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <div class="card border-warning">
+            <div class="card-header bg-warning">
+                <h6 class="mb-0"><i class="bi bi-shield-exclamation"></i> Consecuencias</h6>
+            </div>
+            <div class="card-body">
+                <ul class="small mb-0">
+                    <li>Suspensión inmediata de 5 años</li>
+                    <li>Registro en lista de proveedores sancionados</li>
+                    <li>Notificación oficial al proveedor</li>
+                    <li>Reporte a entidades de control</li>
+                    <li>Inhabilidad para contratar</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const confirmacion = document.getElementById('confirmacion').value.trim();
+
+        if (confirmacion !== 'SUSPENDER') {
+            e.preventDefault();
+            alert('Debe escribir exactamente "SUSPENDER" para confirmar esta acción');
+            return false;
+        }
+
+        if (!confirm('¿Está ABSOLUTAMENTE SEGURO de suspender a este proveedor por 5 años?\n\nEsta acción NO se puede deshacer.')) {
+            e.preventDefault();
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

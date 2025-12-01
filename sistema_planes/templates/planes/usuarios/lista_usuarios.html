@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Usuarios{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: white;
+        border: 1px solid #ddd;
+        border-left: 4px solid;
+        padding: 15px;
+        border-radius: 4px;
+        text-align: center;
+    }
+
+    .stat-card.blue { border-left-color: #3498db; }
+    .stat-card.green { border-left-color: #27ae60; }
+    .stat-card.orange { border-left-color: #e67e22; }
+    .stat-card.purple { border-left-color: #9b59b6; }
+
+    .stat-number {
+        font-size: 28px;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+
+    .stat-label {
+        color: #7f8c8d;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+
+    .badge-tipo {
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>👥 Gestión de Usuarios</h1>
+    <a href="{% url 'gestor_crear_usuario' %}" class="btn btn-primary">
+        <i class="bi bi-person-plus"></i> Nuevo Usuario
+    </a>
+</div>
+
+<!-- Estadísticas -->
+<div class="stats">
+    <div class="stat-card blue">
+        <div class="stat-number">{{ estadisticas.total }}</div>
+        <div class="stat-label">Total Usuarios</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-number">{{ estadisticas.gestores }}</div>
+        <div class="stat-label">Gestores PM</div>
+    </div>
+    <div class="stat-card" style="border-left-color: #3498db;">
+        <div class="stat-number">{{ estadisticas.gestores_compras }}</div>
+        <div class="stat-label">Gestores Compras</div>
+    </div>
+    <div class="stat-card orange">
+        <div class="stat-number">{{ estadisticas.tecnicos }}</div>
+        <div class="stat-label">Técnicos</div>
+    </div>
+    <div class="stat-card purple">
+        <div class="stat-number">{{ estadisticas.proveedores }}</div>
+        <div class="stat-label">Proveedores</div>
+    </div>
+    {% if estadisticas.pendientes > 0 %}
+    <div class="stat-card" style="border-left-color: #e74c3c;">
+        <div class="stat-number">{{ estadisticas.pendientes }}</div>
+        <div class="stat-label">Pendientes Activar</div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Proveedores pendientes de activación -->
+{% if proveedores_pendientes %}
+<div class="alert alert-warning">
+    <h5><i class="bi bi-exclamation-triangle"></i> Proveedores Pendientes de Activación</h5>
+    <p>Los siguientes proveedores fueron registrados por los técnicos y requieren que generes sus credenciales de acceso:</p>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-warning">
+        <h5 class="mb-0">🔑 Proveedores sin Credenciales</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>NIT</th>
+                        <th>Razón Social</th>
+                        <th>Email</th>
+                        <th>Fecha Registro</th>
+                        <th class="text-center">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for proveedor in proveedores_pendientes %}
+                    <tr>
+                        <td><strong>{{ proveedor.nit }}</strong></td>
+                        <td>{{ proveedor.razon_social }}</td>
+                        <td>{{ proveedor.email }}</td>
+                        <td><small>{{ proveedor.fecha_registro|date:"d/m/Y H:i" }}</small></td>
+                        <td class="text-center">
+                            <a href="{% url 'gestor_generar_credenciales' proveedor.id %}"
+                               class="btn btn-success btn-sm">
+                                <i class="bi bi-key"></i> Generar Credenciales
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Tabla de usuarios -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Tipo</th>
+                        <th>Estado</th>
+                        <th>Fecha Registro</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in usuarios %}
+                    <tr>
+                        <td>
+                            <strong>{{ item.usuario.username }}</strong>
+                            {% if item.usuario.is_superuser %}
+                            <span class="badge bg-danger ms-1">Admin</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.usuario.get_full_name|default:"-" }}</td>
+                        <td>{{ item.usuario.email|default:"-" }}</td>
+                        <td>
+                            {% if item.perfil.tipo_perfil == 'GESTOR' %}
+                                <span class="badge bg-success badge-tipo">{{ item.tipo_display }}</span>
+                            {% elif item.perfil.tipo_perfil == 'GESTOR_COMPRAS' %}
+                                <span class="badge bg-primary badge-tipo">{{ item.tipo_display }}</span>
+                            {% elif item.perfil.tipo_perfil == 'TECNICO' %}
+                                <span class="badge bg-warning text-dark badge-tipo">{{ item.tipo_display }}</span>
+                            {% elif item.perfil.tipo_perfil == 'PROVEEDOR' %}
+                                <span class="badge bg-info badge-tipo">{{ item.tipo_display }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary badge-tipo">{{ item.tipo_display }}</span>
+                            {% endif %}
+                            {% if item.proveedor %}
+                            <br><small class="text-muted">{{ item.proveedor.razon_social|truncatewords:5 }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.activo %}
+                                <span class="badge bg-success">Activo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ item.usuario.date_joined|date:"d/m/Y H:i" }}</small>
+                        </td>
+                        <td class="text-center">
+                            <a href="{% url 'gestor_editar_usuario' item.usuario.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
+                            {% if not item.usuario.is_superuser and item.usuario != user %}
+                            <form method="post" action="{% url 'gestor_toggle_estado_usuario' item.usuario.id %}" style="display:inline;" onsubmit="return confirm('¿Estás seguro de {% if item.activo %}desactivar{% else %}activar{% endif %} este usuario?');">
+                                {% csrf_token %}
+                                {% if item.activo %}
+                                <button type="submit" class="btn btn-sm btn-outline-warning" title="Desactivar usuario">
+                                    <i class="bi bi-toggle-on"></i> Desactivar
+                                </button>
+                                {% else %}
+                                <button type="submit" class="btn btn-sm btn-outline-success" title="Activar usuario">
+                                    <i class="bi bi-toggle-off"></i> Activar
+                                </button>
+                                {% endif %}
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <p class="text-muted">No hay usuarios registrados</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

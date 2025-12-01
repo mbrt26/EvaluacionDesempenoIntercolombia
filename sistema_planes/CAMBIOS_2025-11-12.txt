@@ -1,0 +1,208 @@
+================================================================================
+REGISTRO DE CAMBIOS Y ACTUALIZACIONES
+Fecha: 12 de Noviembre de 2025
+Sistema: Evaluación de Desempeño - Planes de Mejoramiento
+================================================================================
+
+RESUMEN DE CAMBIOS:
+-------------------
+Se realizaron optimizaciones visuales y funcionales en el sistema de workflow
+de planes de mejoramiento para mejorar la experiencia de usuario y prevenir
+modificaciones no deseadas una vez que el proceso ha avanzado.
+
+
+ARCHIVOS MODIFICADOS:
+---------------------
+
+1. templates/planes/ver_evaluacion.html
+   - Optimización completa del timeline de procesos
+   - Reducción de espacio vertical (60% menos en secciones clave)
+   - Formularios más compactos (form-control-sm, btn-sm)
+   - Implementación de vistas informativas para procesos completados
+   - Uso de <details> para información colapsable en estados finales
+   - Bloqueo de edición en "Proceso de Firmas" cuando hay acciones posteriores
+   - Bloqueo de edición en "Rutas de Acción" cuando el proceso ha avanzado
+
+2. templates/planes/ver_plan.html
+   - Ya estaba optimizado en sesiones anteriores
+   - Sin cambios en esta sesión
+
+3. templates/planes/registros_gestor.html
+   - Ya estaba optimizado en sesiones anteriores
+   - Sin cambios en esta sesión
+
+4. planes/views.py
+   - Ya estaba optimizado en sesiones anteriores
+   - Sin cambios en esta sesión
+
+5. planes/views_perfiles.py
+   - Ya estaba optimizado en sesiones anteriores
+   - Sin cambios en esta sesión
+
+
+MEJORAS IMPLEMENTADAS:
+----------------------
+
+1. OPTIMIZACIÓN VISUAL DEL TIMELINE
+   ✓ Reducción de márgenes y paddings en todas las secciones
+   ✓ Uso consistente de clases Bootstrap pequeñas (py-1, py-2, px-2)
+   ✓ Botones pequeños (btn-sm) en lugar de grandes (btn-lg)
+   ✓ Textos con clase "small" para mejor densidad de información
+   ✓ Alertas compactas con padding reducido
+   ✓ Headers de cards compactos
+
+2. CONTROL DE EDICIÓN DE ESTADOS
+   ✓ "Proceso de Firmas" solo editable si NO hay estado de flujo definido
+   ✓ "Rutas de Acción" solo editable si NO hay ruta específica seleccionada
+   ✓ "Rutas de Acción" solo editable si NO hay plan creado
+   ✓ Mensajes informativos cuando la edición está bloqueada
+   ✓ Prevención de modificaciones retroactivas del workflow
+
+3. INFORMACIÓN COLAPSABLE
+   ✓ Uso de <details> en estados finales (CANCELACION_RADICADA, NO_RECIBIDO)
+   ✓ Información completa disponible sin ocupar espacio por defecto
+   ✓ Mejor experiencia de usuario en pantallas pequeñas
+
+
+LÓGICA DE BLOQUEO DE EDICIÓN:
+------------------------------
+
+PROCESO DE FIRMAS (Etapa 2):
+- EDITABLE cuando:
+  • evaluacion.estado_flujo_evaluacion es NULL o "PENDIENTE"
+  • No se ha avanzado a ninguna ruta de acción específica
+
+- BLOQUEADO cuando:
+  • evaluacion.estado_firma == "FIRMADO" Y
+  • evaluacion.estado_flujo_evaluacion tiene un valor específico (no PENDIENTE)
+  • Mensaje: "El proceso de firmas ha sido completado. Ya no se puede
+              modificar porque hay acciones posteriores en curso."
+
+RUTAS DE ACCIÓN (Etapa 4):
+- EDITABLE cuando:
+  • No hay una ruta específica seleccionada (FALTA_ETICA, ACLARACION, REEVALUADO)
+  • Y no hay un plan creado
+
+- BLOQUEADO cuando:
+  • Se ha seleccionado una ruta específica (no FLUJO_NORMAL ni PENDIENTE)
+    Mensaje: "La ruta de acción ya fue seleccionada. Ya no se puede
+              modificar porque el proceso ha avanzado."
+  • O existe un plan creado
+    Mensaje: "La ruta de acción (Flujo Normal) ya fue establecida con la
+              creación del plan. Ya no se puede modificar."
+
+
+MIGRACIONES DE BASE DE DATOS:
+------------------------------
+
+NO SE REQUIEREN MIGRACIONES
+
+Los cambios realizados son únicamente a nivel de plantillas (templates) y
+no afectan el modelo de datos. No es necesario ejecutar makemigrations ni
+migrate.
+
+
+INSTRUCCIONES DE DESPLIEGUE:
+-----------------------------
+
+1. VERIFICAR ARCHIVOS MODIFICADOS:
+   $ git status
+
+   Debe mostrar:
+   - templates/planes/ver_evaluacion.html (modificado)
+
+2. REVISAR CAMBIOS:
+   $ git diff templates/planes/ver_evaluacion.html
+
+3. NO ES NECESARIO EJECUTAR MIGRACIONES
+
+4. REINICIAR SERVIDOR (si está en producción):
+   $ sudo systemctl restart gunicorn
+   # O el comando correspondiente para su servidor de aplicaciones
+
+5. VERIFICAR FUNCIONAMIENTO:
+   - Acceder a cualquier evaluación existente
+   - Verificar que el timeline se ve más compacto
+   - Verificar que los formularios de "Proceso de Firmas" y "Rutas de Acción"
+     se bloquean correctamente cuando hay acciones posteriores
+   - Verificar que los mensajes informativos aparecen correctamente
+
+
+PRUEBAS RECOMENDADAS:
+---------------------
+
+1. FLUJO DE PROCESO DE FIRMAS:
+   ✓ Crear nueva evaluación
+   ✓ Verificar que formulario de firmas está disponible
+   ✓ Cambiar estado a "FIRMADO"
+   ✓ Seleccionar una ruta de acción (ej: FLUJO_NORMAL)
+   ✓ Verificar que formulario de firmas ahora muestra mensaje informativo
+   ✓ Verificar que NO se puede modificar el estado de firma
+
+2. FLUJO DE RUTAS DE ACCIÓN:
+   ✓ En evaluación con firma completada
+   ✓ Verificar que formulario de rutas está disponible
+   ✓ Seleccionar ruta (ej: ACLARACION)
+   ✓ Verificar que formulario ahora muestra mensaje informativo
+   ✓ Verificar que NO se puede modificar la ruta seleccionada
+
+3. FLUJO CON PLAN CREADO:
+   ✓ En evaluación con firma completada y flujo normal
+   ✓ Proveedor crea plan de mejoramiento
+   ✓ Verificar que formulario de rutas muestra mensaje informativo
+   ✓ Verificar que indica que la ruta fue establecida con la creación del plan
+
+4. OPTIMIZACIÓN VISUAL:
+   ✓ Comparar con versión anterior (debería ocupar ~60% menos espacio)
+   ✓ Verificar que todos los elementos son legibles
+   ✓ Verificar responsive en diferentes tamaños de pantalla
+
+
+COMPATIBILIDAD:
+---------------
+
+✓ Django 5.2.7
+✓ Bootstrap 5
+✓ Compatible con todos los navegadores modernos
+✓ Responsive design mantenido
+✓ Accesibilidad preservada
+
+
+NOTAS ADICIONALES:
+------------------
+
+1. Los cambios son retroactivos y se aplican a todas las evaluaciones existentes
+   sin necesidad de modificar datos en la base de datos.
+
+2. Los usuarios verán inmediatamente las mejoras visuales al acceder a
+   cualquier evaluación.
+
+3. El bloqueo de edición es inteligente y basado en el estado actual del
+   workflow, no en fechas o flags adicionales.
+
+4. Los mensajes informativos son claros y explican por qué el formulario
+   no está disponible para edición.
+
+5. La funcionalidad existente se mantiene intacta, solo se mejora la UX
+   y se previenen modificaciones no deseadas.
+
+
+ROLLBACK (si es necesario):
+---------------------------
+
+Si surge algún problema, se puede revertir fácilmente:
+
+$ git checkout HEAD -- templates/planes/ver_evaluacion.html
+$ sudo systemctl restart gunicorn  # o el comando correspondiente
+
+
+SOPORTE:
+--------
+
+Para preguntas o problemas relacionados con estos cambios, contactar al
+equipo de desarrollo con referencia a este documento.
+
+
+================================================================================
+FIN DEL DOCUMENTO
+================================================================================

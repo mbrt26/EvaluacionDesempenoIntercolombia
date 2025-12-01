@@ -1,0 +1,508 @@
+{% extends 'base.html' %}
+{% load plan_tags %}
+
+{% block title %}Gestor de planes de mejoramiento{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: white;
+        border: 1px solid #ddd;
+        border-left: 4px solid;
+        padding: 15px;
+        border-radius: 4px;
+        text-align: center;
+    }
+
+    .stat-card.blue { border-left-color: #3498db; }
+    .stat-card.red { border-left-color: #e74c3c; }
+    .stat-card.yellow { border-left-color: #f39c12; }
+    .stat-card.green { border-left-color: #27ae60; }
+
+    .stat-number {
+        font-size: 28px;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+
+    .stat-label {
+        color: #7f8c8d;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+
+    .action-buttons {
+        margin-bottom: 20px;
+        text-align: right;
+    }
+
+    .action-buttons .btn {
+        margin-left: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">📊 Gestor de planes de mejoramiento</h1>
+
+<div class="action-buttons">
+    <a href="{% url 'gestor_crear_proveedor' %}" class="btn btn-primary">
+        <i class="bi bi-building"></i> Nuevo Proveedor
+    </a>
+    <a href="{% url 'gestor_cargar_evaluacion' %}" class="btn btn-success">
+        <i class="bi bi-cloud-upload"></i> Cargar Evaluación
+    </a>
+    <a href="{% url 'gestor_estadisticas' %}" class="btn btn-info">
+        <i class="bi bi-bar-chart"></i> Estadísticas
+    </a>
+</div>
+
+<!-- Estadísticas -->
+<div class="stats">
+    <div class="stat-card blue">
+        <div class="stat-number">{{ estadisticas.total }}</div>
+        <div class="stat-label">Total Proveedores</div>
+    </div>
+    <div class="stat-card red">
+        <div class="stat-number">{{ estadisticas.requieren_plan }}</div>
+        <div class="stat-label">Requieren Plan</div>
+    </div>
+    <div class="stat-card yellow">
+        <div class="stat-number">{{ estadisticas.pendientes }}</div>
+        <div class="stat-label">Planes Pendientes</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-number">{{ estadisticas.aprobados }}</div>
+        <div class="stat-label">Planes Aprobados</div>
+    </div>
+</div>
+
+<!-- Resumen del Flujo de Estados -->
+<div class="card mb-4 border-info">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0">
+            <i class="bi bi-info-circle"></i> Guía de Estados del Sistema
+            <button class="btn btn-sm btn-light float-end" type="button" data-bs-toggle="collapse" data-bs-target="#guiaEstados">
+                <i class="bi bi-chevron-down"></i> Ver/Ocultar
+            </button>
+        </h5>
+    </div>
+    <div class="collapse" id="guiaEstados">
+        <div class="card-body">
+            <div class="row">
+                <!-- Columna 1: Estados Iniciales y en Proceso -->
+                <div class="col-md-6">
+                    <h6 class="text-primary mb-3"><i class="bi bi-arrow-right-circle"></i> Estados en Proceso</h6>
+
+                    <div class="mb-3 p-2 border-start border-secondary border-3">
+                        <strong><span class="badge bg-secondary">⚠ SIN PLAN</span> Sin Plan</strong>
+                        <p class="mb-0 small text-muted">El proveedor requiere presentar un plan de mejoramiento pero aún no lo ha cargado. Esperando acción del proveedor.</p>
+                    </div>
+
+                    <div class="mb-3 p-2 border-start border-info border-3">
+                        <strong><span class="badge bg-info">→ ENVIADO</span> Enviado</strong>
+                        <p class="mb-0 small text-muted">El proveedor envió el plan. Está en cola para revisión por parte del técnico.</p>
+                    </div>
+
+                    <div class="mb-3 p-2 border-start border-danger border-3">
+                        <strong><span class="badge bg-danger">! AJUSTES</span> Requiere Ajustes</strong>
+                        <p class="mb-0 small text-muted">El técnico solicitó ajustes al plan. El proveedor debe corregir y reenviar.</p>
+                    </div>
+
+                    <div class="mb-3 p-2 border-start border-warning border-3">
+                        <strong><span class="badge bg-warning text-dark">⏳ EN REVISIÓN</span> En Revisión</strong>
+                        <p class="mb-0 small text-muted">El plan está siendo revisado por el técnico o gestor.</p>
+                    </div>
+                </div>
+
+                <!-- Columna 2: Estados Finales -->
+                <div class="col-md-6">
+                    <h6 class="text-success mb-3"><i class="bi bi-flag-fill"></i> Estados Finales (FIN del Proceso)</h6>
+
+                    <div class="mb-3 p-2 border-start border-success border-3">
+                        <strong><span class="badge bg-success">✓ APROBADO</span> Aprobado / PM Radicado</strong>
+                        <p class="mb-0 small text-muted"><strong>FIN:</strong> El plan fue aprobado y radicado exitosamente. Proceso completado satisfactoriamente.</p>
+                    </div>
+
+                    <div class="mb-3 p-2 border-start border-danger border-3">
+                        <strong><span class="badge bg-danger">✗ RECHAZADO</span> Rechazado por Proveedor</strong>
+                        <p class="mb-0 small text-muted">El proveedor rechazó voluntariamente continuar con el proceso. Requiere radicación de cancelación por técnico.</p>
+                    </div>
+
+                    <div class="mb-3 p-2 border-start border-dark border-3">
+                        <strong><span class="badge bg-dark">✓ CANCELADO</span> Cancelación Radicada</strong>
+                        <p class="mb-0 small text-muted"><strong>FIN:</strong> El rechazo del proveedor fue radicado formalmente. Proceso cerrado.</p>
+                    </div>
+
+                    <div class="mb-3 p-2 border-start border-secondary border-3">
+                        <strong><span class="badge bg-secondary">⏱ NO RECIBIDO</span> No Recibido (Vencimiento)</strong>
+                        <p class="mb-0 small text-muted"><strong>FIN:</strong> Venció el plazo de 30 días sin recibir el plan. Proceso cerrado automáticamente.</p>
+                    </div>
+
+                    <div class="mb-3 p-2 border-start border-primary border-3">
+                        <strong><span class="badge bg-primary">⚡ PM REEVALUADO</span> PM Reevaluado (≥80)</strong>
+                        <p class="mb-0 small text-muted"><strong>FIN:</strong> El proveedor alcanzó puntaje ≥80 en reevaluación. Proceso exitoso.</p>
+                    </div>
+
+                    <div class="mb-3 p-2 border-start border-danger border-3">
+                        <strong><span class="badge bg-danger">⚠ FALTA ÉTICA</span> Falta de Ética</strong>
+                        <p class="mb-0 small text-muted"><strong>FIN:</strong> Incumplimiento grave detectado. Proceso finalizado con sanción.</p>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-3">
+
+            <div class="alert alert-info mb-0">
+                <h6><i class="bi bi-lightbulb"></i> Flujo General del Proceso:</h6>
+                <ol class="mb-0 small">
+                    <li><strong>Evaluación:</strong> Se evalúa al proveedor. Si puntaje &lt; 80 → requiere plan de mejoramiento</li>
+                    <li><strong>Notificación:</strong> Se envía carta firmada al proveedor con fecha límite (30 días)</li>
+                    <li><strong>Presentación:</strong> Proveedor carga plan → Estado: <span class="badge bg-info">ENVIADO</span></li>
+                    <li><strong>Revisión:</strong> Técnico revisa → puede aprobar, solicitar ajustes, o rechazar</li>
+                    <li><strong>Iteraciones:</strong> Ciclos de ajustes hasta aprobar (5.1, 5.2, 5.3...)</li>
+                    <li><strong>Finalización:</strong> El proceso termina en uno de 5 estados finales:
+                        <ul>
+                            <li>✅ PM Radicado (exitoso)</li>
+                            <li>❌ Cancelación Radicada (rechazo voluntario)</li>
+                            <li>⏱ No Recibido (vencimiento)</li>
+                            <li>⚡ PM Reevaluado (puntaje ≥80)</li>
+                            <li>⚠ Falta Ética (sanción)</li>
+                        </ul>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h2>📋 Listado de Proveedores</h2>
+
+<!-- Filtros -->
+<div class="card mb-3">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros de Búsqueda</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label"><strong>Buscar Proveedor:</strong></label>
+                <input type="text"
+                       name="busqueda"
+                       class="form-control"
+                       placeholder="Nombre o NIT..."
+                       value="{{ filtros.busqueda }}">
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label"><strong>Estado del Plan:</strong></label>
+                <select name="estado" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="SIN_PLAN" {% if filtros.estado == 'SIN_PLAN' %}selected{% endif %}>Sin Plan</option>
+                    <option value="BORRADOR" {% if filtros.estado == 'BORRADOR' %}selected{% endif %}>Borrador</option>
+                    <option value="ENVIADO" {% if filtros.estado == 'ENVIADO' %}selected{% endif %}>Enviado</option>
+                    <option value="PM_REEVALUADO" {% if filtros.estado == 'PM_REEVALUADO' %}selected{% endif %}>PM Reevaluado</option>
+                    <option value="SOLICITUD_AJUSTES" {% if filtros.estado == 'SOLICITUD_AJUSTES' %}selected{% endif %}>Solicitud Ajustes</option>
+                    <option value="EN_RADICACION" {% if filtros.estado == 'EN_RADICACION' %}selected{% endif %}>En Radicación</option>
+                    <option value="RECHAZADO" {% if filtros.estado == 'RECHAZADO' %}selected{% endif %}>Rechazado</option>
+                    <option value="CANCELACION_RADICADA" {% if filtros.estado == 'CANCELACION_RADICADA' %}selected{% endif %}>Cancelación Radicada</option>
+                    <option value="NO_RECIBIDO" {% if filtros.estado == 'NO_RECIBIDO' %}selected{% endif %}>No Recibido</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label"><strong>Rango de Puntaje:</strong></label>
+                <select name="puntaje" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="bajo_60" {% if filtros.puntaje == 'bajo_60' %}selected{% endif %}>Crítico (&lt;60)</option>
+                    <option value="60_80" {% if filtros.puntaje == '60_80' %}selected{% endif %}>Aceptable (60-79)</option>
+                    <option value="sobre_80" {% if filtros.puntaje == 'sobre_80' %}selected{% endif %}>Satisfactorio (≥80)</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label"><strong>Requiere Plan:</strong></label>
+                <select name="requiere_plan" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="si" {% if filtros.requiere_plan == 'si' %}selected{% endif %}>Sí (&lt;80)</option>
+                    <option value="no" {% if filtros.requiere_plan == 'no' %}selected{% endif %}>No (≥80)</option>
+                </select>
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-search"></i> Buscar
+                </button>
+                <a href="{% url 'gestor_registros' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resultados -->
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i>
+    Mostrando <strong>{{ page_obj.paginator.count }}</strong> registro(s)
+    {% if filtros.busqueda or filtros.estado or filtros.puntaje or filtros.requiere_plan %}
+        (filtrados)
+    {% endif %}
+</div>
+
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Proveedor</th>
+                <th class="text-center">Fecha de Notificación</th>
+                <th class="text-center">Fecha Límite Plan</th>
+                <th class="text-center">Puntaje</th>
+                <th class="text-center">Último Proceso</th>
+                <th class="text-center">Estado Actual</th>
+                <th class="text-center">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in datos %}
+            <tr>
+                <td>
+                    <strong style="color: #2c3e50;">{{ item.proveedor.razon_social }}</strong><br>
+                    <small class="text-muted">NIT: {{ item.proveedor.nit }}</small><br>
+                    <small class="text-muted">📧 {{ item.proveedor.email }}</small>
+                </td>
+                <td class="text-center">
+                    {% if item.evaluacion %}
+                        {% if item.evaluacion.fecha_cambio_estado_flujo %}
+                            <small>{{ item.evaluacion.fecha_cambio_estado_flujo|date:"d/m/Y H:i" }}</small>
+                        {% elif item.evaluacion.fecha_cambio_estado_firma %}
+                            <small>{{ item.evaluacion.fecha_cambio_estado_firma|date:"d/m/Y H:i" }}</small>
+                        {% else %}
+                            <small class="text-muted">—</small>
+                        {% endif %}
+                    {% else %}
+                        <small class="text-muted">—</small>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    {% if item.evaluacion %}
+                        {% if item.evaluacion.fecha_cambio_estado_flujo %}
+                            <small>{{ item.evaluacion.fecha_cambio_estado_flujo|add_days:30|date:"d/m/Y" }}</small>
+                        {% elif item.evaluacion.fecha_cambio_estado_firma %}
+                            <small>{{ item.evaluacion.fecha_cambio_estado_firma|add_days:30|date:"d/m/Y" }}</small>
+                        {% else %}
+                            <small class="text-muted">—</small>
+                        {% endif %}
+                    {% else %}
+                        <small class="text-muted">—</small>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    {% if item.evaluacion %}
+                        <span class="badge {% if item.evaluacion.puntaje >= 80 %}bg-success{% elif item.evaluacion.puntaje >= 60 %}bg-warning text-dark{% else %}bg-danger{% endif %}" style="font-size: 16px; padding: 8px 12px;">
+                            {{ item.evaluacion.puntaje }}
+                        </span>
+                    {% else %}
+                        <span class="badge bg-secondary" style="font-size: 16px; padding: 8px 12px;">
+                            —
+                        </span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    {% if item.plan %}
+                        {% if item.plan.estado == 'PM_RADICADO' or item.plan.estado == 'APROBADO' %}
+                            <span class="badge bg-success">7️⃣ Plan Radicado</span>
+                            <br><small class="text-success">FIN - Exitoso</small>
+                        {% elif item.plan.estado == 'CANCELACION_RADICADA' %}
+                            <span class="badge bg-dark">8️⃣ Cancelación Radicada</span>
+                            <br><small class="text-muted">FIN - Cancelado</small>
+                        {% elif item.plan.estado == 'NO_RECIBIDO' %}
+                            <span class="badge bg-secondary">⏱ No Recibido</span>
+                            <br><small class="text-muted">FIN - Vencimiento</small>
+                        {% elif item.plan.estado == 'PM_REEVALUADO' %}
+                            <span class="badge bg-primary">⚡ Reevaluado</span>
+                            <br><small class="text-success">FIN - Puntaje ≥80</small>
+                        {% elif item.plan.estado == 'FALTA_ETICA' %}
+                            <span class="badge bg-danger">⚠ Falta de Ética</span>
+                            <br><small class="text-danger">FIN - Sanción</small>
+                        {% elif item.plan.estado == 'RECHAZADO' %}
+                            <span class="badge bg-danger">8️⃣.1 Rechazado</span>
+                            <br><small class="text-muted">Requiere radicación</small>
+                        {% elif item.plan.estado == 'EN_RADICACION' %}
+                            <span class="badge bg-success">6️⃣ Aprobado</span>
+                            <br><small class="text-muted">Pendiente radicación</small>
+                        {% elif item.plan.estado == 'ENVIADO' %}
+                            <span class="badge bg-info">5️⃣.1 Plan Enviado</span>
+                            <br><small class="text-muted">En revisión</small>
+                        {% elif item.plan.estado == 'REQUIERE_AJUSTES' or item.plan.estado == 'SOLICITUD_AJUSTES' %}
+                            <span class="badge bg-warning text-dark">5️⃣.2 Requiere Ajustes</span>
+                            <br><small class="text-muted">Acción del proveedor</small>
+                        {% elif item.plan.estado == 'BORRADOR' %}
+                            <span class="badge bg-secondary">4️⃣ Editando Plan</span>
+                            <br><small class="text-muted">Proveedor trabajando</small>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ item.plan.get_estado_display }}</span>
+                        {% endif %}
+                    {% else %}
+                        {% if item.evaluacion %}
+                            {% if item.requiere_plan %}
+                                {% if item.evaluacion.estado_firma == 'FIRMADO' %}
+                                    <span class="badge bg-info">3️⃣ Carta Enviada</span>
+                                    <br><small class="text-muted">Esperando plan</small>
+                                {% elif item.evaluacion.estado_firma == 'PROCESO_FIRMAS' %}
+                                    <span class="badge bg-warning text-dark">2️⃣ Proceso de Firmas</span>
+                                    <br><small class="text-muted">Pendiente firmas</small>
+                                {% else %}
+                                    <span class="badge bg-danger">1️⃣ Evaluación Completada</span>
+                                    <br><small class="text-muted">Requiere plan</small>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-success">✓ No Requiere Plan</span>
+                                <br><small class="text-success">Puntaje ≥80</small>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge bg-secondary">Sin evaluación</span>
+                            <br><small class="text-muted">No evaluado</small>
+                        {% endif %}
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    {% if item.plan %}
+                        {% if item.plan.estado == 'PM_RADICADO' or item.plan.estado == 'APROBADO' %}
+                            <span class="badge bg-success" style="font-size: 14px;">✓ RADICADO</span>
+                        {% elif item.plan.estado == 'CANCELACION_RADICADA' %}
+                            <span class="badge bg-dark" style="font-size: 14px;">✓ CANCELADO</span>
+                        {% elif item.plan.estado == 'NO_RECIBIDO' %}
+                            <span class="badge bg-secondary" style="font-size: 14px;">⏱ VENCIDO</span>
+                        {% elif item.plan.estado == 'PM_REEVALUADO' %}
+                            <span class="badge bg-primary" style="font-size: 14px;">⚡ REEVALUADO</span>
+                        {% elif item.plan.estado == 'FALTA_ETICA' %}
+                            <span class="badge bg-danger" style="font-size: 14px;">⚠ FALTA ÉTICA</span>
+                        {% elif item.plan.estado == 'RECHAZADO' %}
+                            <span class="badge bg-danger" style="font-size: 14px;">✗ RECHAZADO</span>
+                        {% elif item.plan.estado == 'EN_RADICACION' %}
+                            <span class="badge bg-success" style="font-size: 14px;">→ EN RADICACIÓN</span>
+                        {% elif item.plan.estado == 'ENVIADO' %}
+                            <span class="badge bg-info" style="font-size: 14px;">→ ENVIADO</span>
+                        {% elif item.plan.estado == 'REQUIERE_AJUSTES' or item.plan.estado == 'SOLICITUD_AJUSTES' %}
+                            <span class="badge bg-warning text-dark" style="font-size: 14px;">! AJUSTES</span>
+                        {% elif item.plan.estado == 'BORRADOR' %}
+                            <span class="badge bg-secondary" style="font-size: 14px;">📝 BORRADOR</span>
+                        {% else %}
+                            <span class="badge bg-secondary" style="font-size: 14px;">{{ item.plan.get_estado_display|upper }}</span>
+                        {% endif %}
+                        {% if item.plan.fecha_envio %}
+                        <br><small class="text-muted">{{ item.plan.fecha_envio|date:"d/m/Y" }}</small>
+                        {% endif %}
+                    {% else %}
+                        {% if item.evaluacion %}
+                            {% if item.requiere_plan %}
+                                {% if item.evaluacion.estado_firma == 'FIRMADO' %}
+                                    <span class="badge bg-info" style="font-size: 14px;">📨 NOTIFICADO</span>
+                                {% elif item.evaluacion.estado_firma == 'PROCESO_FIRMAS' %}
+                                    <span class="badge bg-warning text-dark" style="font-size: 14px;">✍️ FIRMANDO</span>
+                                {% else %}
+                                    <span class="badge bg-danger" style="font-size: 14px;">⚠ SIN PLAN</span>
+                                {% endif %}
+                                <br><small class="text-danger">Acción requerida</small>
+                            {% else %}
+                                <span class="badge bg-success" style="font-size: 14px;">✓ APROBADO</span>
+                                <br><small class="text-success">Puntaje ≥80</small>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge bg-success" style="font-size: 14px;">✓ NO REQUIERE</span>
+                            <br><small class="text-success">Puntaje Satisfactorio</small>
+                        {% endif %}
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    {% if item.evaluacion %}
+                        <a href="{% url 'proveedor_ver_evaluacion' item.evaluacion.id %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-eye"></i> Ver Evaluación
+                        </a>
+                    {% else %}
+                        <span class="badge bg-secondary">Sin evaluación</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center py-5">
+                    <div style="font-size: 48px;">📭</div>
+                    <p class="text-muted">No se encontraron proveedores con evaluaciones</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Paginación -->
+{% if page_obj.has_other_pages %}
+<nav aria-label="Paginación de registros" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1{% if filtros.busqueda %}&busqueda={{ filtros.busqueda }}{% endif %}{% if filtros.estado %}&estado={{ filtros.estado }}{% endif %}{% if filtros.puntaje %}&puntaje={{ filtros.puntaje }}{% endif %}{% if filtros.requiere_plan %}&requiere_plan={{ filtros.requiere_plan }}{% endif %}" aria-label="Primera">
+                <span aria-hidden="true">&laquo;&laquo;</span>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if filtros.busqueda %}&busqueda={{ filtros.busqueda }}{% endif %}{% if filtros.estado %}&estado={{ filtros.estado }}{% endif %}{% if filtros.puntaje %}&puntaje={{ filtros.puntaje }}{% endif %}{% if filtros.requiere_plan %}&requiere_plan={{ filtros.requiere_plan }}{% endif %}" aria-label="Anterior">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">&laquo;&laquo;</span>
+        </li>
+        <li class="page-item disabled">
+            <span class="page-link">&laquo;</span>
+        </li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <li class="page-item active" aria-current="page">
+                <span class="page-link">{{ num }}</span>
+            </li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ num }}{% if filtros.busqueda %}&busqueda={{ filtros.busqueda }}{% endif %}{% if filtros.estado %}&estado={{ filtros.estado }}{% endif %}{% if filtros.puntaje %}&puntaje={{ filtros.puntaje }}{% endif %}{% if filtros.requiere_plan %}&requiere_plan={{ filtros.requiere_plan }}{% endif %}">{{ num }}</a>
+            </li>
+            {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if filtros.busqueda %}&busqueda={{ filtros.busqueda }}{% endif %}{% if filtros.estado %}&estado={{ filtros.estado }}{% endif %}{% if filtros.puntaje %}&puntaje={{ filtros.puntaje }}{% endif %}{% if filtros.requiere_plan %}&requiere_plan={{ filtros.requiere_plan }}{% endif %}" aria-label="Siguiente">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if filtros.busqueda %}&busqueda={{ filtros.busqueda }}{% endif %}{% if filtros.estado %}&estado={{ filtros.estado }}{% endif %}{% if filtros.puntaje %}&puntaje={{ filtros.puntaje }}{% endif %}{% if filtros.requiere_plan %}&requiere_plan={{ filtros.requiere_plan }}{% endif %}" aria-label="Última">
+                <span aria-hidden="true">&raquo;&raquo;</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">&raquo;</span>
+        </li>
+        <li class="page-item disabled">
+            <span class="page-link">&raquo;&raquo;</span>
+        </li>
+        {% endif %}
+    </ul>
+    <p class="text-center text-muted">
+        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} ({{ estadisticas.total }} registros totales, mostrando {{ page_obj.object_list|length }} en esta página)
+    </p>
+</nav>
+{% endif %}
+{% endblock %}

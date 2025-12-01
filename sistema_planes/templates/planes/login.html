@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Iniciar Sesión - Sistema de Planes de Mejoramiento{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5 col-lg-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white text-center py-3">
+                <h4 class="mb-0">
+                    <i class="bi bi-clipboard-check"></i> Sistema de Planes de Mejoramiento
+                </h4>
+                <small>Intercolombia S.A. E.S.P.</small>
+            </div>
+            <div class="card-body p-4">
+                <h5 class="text-center mb-4">Iniciar Sesión</h5>
+                
+                <form method="POST" action="{% url 'login' %}">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="username" class="form-label">
+                            <i class="bi bi-person"></i> Usuario
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="username" 
+                               name="username" 
+                               placeholder="NIT (proveedores) o usuario"
+                               required 
+                               autofocus>
+                        <small class="text-muted">Proveedores: use su NIT sin puntos ni guiones</small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="password" class="form-label">
+                            <i class="bi bi-lock"></i> Contraseña
+                        </label>
+                        <input type="password" 
+                               class="form-control" 
+                               id="password" 
+                               name="password" 
+                               placeholder="Ingrese su contraseña"
+                               required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100 py-2">
+                        <i class="bi bi-box-arrow-in-right"></i> Ingresar
+                    </button>
+                </form>
+                
+                <hr class="my-4">
+                
+                <div class="text-center text-muted">
+                    <small>
+                        <i class="bi bi-info-circle"></i> 
+                        Si tiene problemas para ingresar, contacte al administrador
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-3">
+            <small class="text-muted">
+                Sistema desarrollado para la gestión de planes de mejoramiento de proveedores
+            </small>
+        </div>
+    </div>
+</div>
+{% endblock %}

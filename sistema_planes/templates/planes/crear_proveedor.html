@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}Crear Nuevo Proveedor - Sistema de Planes de Mejoramiento{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-building-add"></i> Registrar Nuevo Proveedor
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="formProveedor">
+                        {% csrf_token %}
+                        
+                        <h5 class="mb-3">Información del Proveedor</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="nit" class="form-label">NIT *</label>
+                                    <input type="text" class="form-control" id="nit" name="nit" 
+                                           placeholder="900123456" required>
+                                    <small class="text-muted">Sin puntos ni guiones</small>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="razon_social" class="form-label">Razón Social *</label>
+                                    <input type="text" class="form-control" id="razon_social" name="razon_social" 
+                                           placeholder="Empresa S.A.S" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email Corporativo *</label>
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           placeholder="contacto@empresa.com" required>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email_adicional" class="form-label">Email Adicional del Gestor del Proyecto</label>
+                                    <input type="email" class="form-control" id="email_adicional" name="email_adicional" 
+                                           placeholder="gestor@empresa.com">
+                                    <small class="text-muted">Campo opcional para el gestor del proyecto del contratista</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-warning mt-3">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Nota:</strong> Una vez registrado el proveedor, el <strong>Gestor</strong> deberá generar las credenciales de acceso desde el módulo de <strong>Gestión de Usuarios</strong>.
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'lista_proveedores' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Crear Proveedor
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Validar formato del NIT
+document.getElementById('formProveedor').addEventListener('submit', function(e) {
+    const nit = document.getElementById('nit').value;
+    if (!/^\d{9,}$/.test(nit)) {
+        e.preventDefault();
+        alert('El NIT debe contener solo números (mínimo 9 dígitos)');
+        document.getElementById('nit').focus();
+        return false;
+    }
+    return true;
+});
+</script>
+{% endblock %}

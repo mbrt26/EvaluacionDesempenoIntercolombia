@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+
+{% block title %}Crear Plan de Mejoramiento{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>Crear Plan de Mejoramiento</h2>
+        <p class="text-muted">
+            Evaluación: {{ evaluacion.periodo }} - Puntaje: {{ evaluacion.puntaje }}/100
+        </p>
+    </div>
+</div>
+
+<form method="POST" enctype="multipart/form-data" id="planForm">
+    {% csrf_token %}
+    
+    <!-- Análisis de Causa Raíz -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5 class="mb-0">1. Análisis de Causa Raíz <span class="text-danger">*</span></h5>
+        </div>
+        <div class="card-body">
+            <textarea name="analisis_causa" 
+                      class="form-control" 
+                      rows="5" 
+                      required
+                      minlength="100"
+                      placeholder="Explique detalladamente las causas raíz de los problemas identificados en la evaluación...">{% if form_data %}{{ form_data.analisis_causa }}{% endif %}</textarea>
+            <small class="text-muted">Mínimo 100 caracteres</small>
+        </div>
+    </div>
+    
+    <!-- Acciones de Mejora -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5 class="mb-0">2. Acciones de Mejora <span class="text-danger">*</span></h5>
+        </div>
+        <div class="card-body">
+            <div id="acciones-container">
+                <div class="accion-item border rounded p-3 mb-3">
+                    <h6>Acción 1</h6>
+                    <div class="mb-2">
+                        <label>Descripción de la acción <span class="text-danger">*</span></label>
+                        <input type="text" name="accion_1" class="form-control" required 
+                               placeholder="Describa la acción de mejora"
+                               value="{% if form_data %}{{ form_data.accion_1 }}{% endif %}">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label>Responsable <span class="text-danger">*</span></label>
+                            <input type="text" name="responsable_1" class="form-control" required
+                                   placeholder="Nombre del responsable"
+                                   value="{% if form_data %}{{ form_data.responsable_1 }}{% endif %}">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label>Fecha compromiso <span class="text-danger">*</span></label>
+                            <input type="date" name="fecha_1" class="form-control" required
+                                   min="{{ evaluacion.fecha|date:'Y-m-d' }}"
+                                   value="{% if form_data %}{{ form_data.fecha_1 }}{% endif %}">
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label>Indicador de éxito</label>
+                        <input type="text" name="indicador_1" class="form-control"
+                               placeholder="¿Cómo medirá el éxito de esta acción?"
+                               value="{% if form_data %}{{ form_data.indicador_1 }}{% endif %}">
+                    </div>
+                </div>
+            </div>
+            
+            <button type="button" class="btn btn-secondary" onclick="agregarAccion()">
+                <i class="bi bi-plus"></i> Agregar otra acción
+            </button>
+        </div>
+    </div>
+    
+    <!-- Información General -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5 class="mb-0">3. Información General <span class="text-danger">*</span></h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label>Acciones propuestas (resumen) <span class="text-danger">*</span></label>
+                <textarea name="acciones_propuestas" class="form-control" rows="3" required
+                          placeholder="Resuma las acciones de mejora propuestas">{% if form_data %}{{ form_data.acciones_propuestas }}{% endif %}</textarea>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label>Responsable general del plan <span class="text-danger">*</span></label>
+                    <input type="text" name="responsable" class="form-control" required
+                           placeholder="Nombre del responsable principal"
+                           value="{% if form_data %}{{ form_data.responsable }}{% endif %}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Fecha de implementación <span class="text-danger">*</span></label>
+                    <input type="date" name="fecha_implementacion" class="form-control" required
+                           min="{{ evaluacion.fecha|date:'Y-m-d' }}"
+                           value="{% if form_data %}{{ form_data.fecha_implementacion }}{% endif %}">
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label>Indicadores de seguimiento <span class="text-danger">*</span></label>
+                <textarea name="indicadores" class="form-control" rows="3" required
+                          placeholder="Describa los indicadores para medir el éxito del plan">{% if form_data %}{{ form_data.indicadores }}{% endif %}</textarea>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Archivos Adjuntos (Soporte) -->
+    <div class="card mb-3">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">4. Archivos Adjuntos - Soporte (Opcional)</h5>
+        </div>
+        <div class="card-body">
+            <div id="archivos-container">
+                <div class="archivo-item border rounded p-3 mb-3 bg-light">
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label>Tipo de Documento</label>
+                            <select name="tipo_documento_1" class="form-select">
+                                <option value="PLAN_MEJORAMIENTO">Plan de Mejoramiento</option>
+                                <option value="ANALISIS_CAUSA_RAIZ">Análisis de Causa Raíz</option>
+                                <option value="OTRO">Otro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label>Archivo</label>
+                            <input type="file"
+                                   name="archivo_1"
+                                   class="form-control"
+                                   accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png">
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label>Descripción (opcional)</label>
+                        <input type="text"
+                               name="descripcion_1"
+                               class="form-control"
+                               placeholder="Descripción del archivo">
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" class="btn btn-secondary btn-sm" onclick="agregarArchivo()">
+                <i class="bi bi-plus"></i> Agregar otro archivo
+            </button>
+
+            <small class="d-block mt-2 text-muted">
+                Formatos permitidos: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG. Máximo 10MB por archivo.
+            </small>
+        </div>
+    </div>
+    
+    <!-- Botones -->
+    <div class="d-flex justify-content-between mb-5">
+        <a href="{% url 'dashboard_proveedor' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Cancelar
+        </a>
+        <button type="submit" class="btn btn-primary btn-lg">
+            <i class="bi bi-send"></i> Enviar Plan
+        </button>
+    </div>
+</form>
+
+<script>
+let contadorAcciones = 1;
+let contadorArchivos = 1;
+
+function agregarAccion() {
+    contadorAcciones++;
+    const container = document.getElementById('acciones-container');
+    const div = document.createElement('div');
+    div.className = 'accion-item border rounded p-3 mb-3';
+    div.innerHTML = `
+        <div class="d-flex justify-content-between">
+            <h6>Acción ${contadorAcciones}</h6>
+            <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.parentElement.remove()">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+        <div class="mb-2">
+            <label>Descripción de la acción</label>
+            <input type="text" name="accion_${contadorAcciones}" class="form-control"
+                   placeholder="Describa la acción de mejora">
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-2">
+                <label>Responsable</label>
+                <input type="text" name="responsable_${contadorAcciones}" class="form-control"
+                       placeholder="Nombre del responsable">
+            </div>
+            <div class="col-md-6 mb-2">
+                <label>Fecha compromiso</label>
+                <input type="date" name="fecha_${contadorAcciones}" class="form-control"
+                       min="{{ evaluacion.fecha|date:'Y-m-d' }}">
+            </div>
+        </div>
+        <div class="mb-2">
+            <label>Indicador de éxito</label>
+            <input type="text" name="indicador_${contadorAcciones}" class="form-control"
+                   placeholder="¿Cómo medirá el éxito de esta acción?">
+        </div>
+    `;
+    container.appendChild(div);
+}
+
+function agregarArchivo() {
+    contadorArchivos++;
+    const container = document.getElementById('archivos-container');
+    const div = document.createElement('div');
+    div.className = 'archivo-item border rounded p-3 mb-3 bg-light';
+    div.innerHTML = `
+        <div class="d-flex justify-content-between mb-2">
+            <h6>Archivo ${contadorArchivos}</h6>
+            <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.parentElement.remove()">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-2">
+                <label>Tipo de Documento</label>
+                <select name="tipo_documento_${contadorArchivos}" class="form-select">
+                    <option value="PLAN_MEJORAMIENTO">Plan de Mejoramiento</option>
+                    <option value="ANALISIS_CAUSA_RAIZ">Análisis de Causa Raíz</option>
+                    <option value="OTRO">Otro</option>
+                </select>
+            </div>
+            <div class="col-md-6 mb-2">
+                <label>Archivo</label>
+                <input type="file"
+                       name="archivo_${contadorArchivos}"
+                       class="form-control"
+                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png">
+            </div>
+        </div>
+        <div class="mb-2">
+            <label>Descripción (opcional)</label>
+            <input type="text"
+                   name="descripcion_${contadorArchivos}"
+                   class="form-control"
+                   placeholder="Descripción del archivo">
+        </div>
+    `;
+    container.appendChild(div);
+}
+</script>
+{% endblock %}

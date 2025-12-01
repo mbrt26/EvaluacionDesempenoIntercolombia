@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Usuario - {{ usuario_editado.username }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-pencil"></i> Editar Usuario: {{ usuario_editado.username }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="accion" value="actualizar_datos">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" value="{{ usuario_editado.username }}" disabled>
+                            <small class="form-text text-muted">No se puede modificar</small>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ usuario_editado.email }}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" value="{{ usuario_editado.first_name }}">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label">Apellido</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" value="{{ usuario_editado.last_name }}">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="tipo_perfil" class="form-label">Tipo de Usuario</label>
+                        <select class="form-select" id="tipo_perfil" name="tipo_perfil">
+                            <option value="GESTOR" {% if perfil_usuario.tipo_perfil == 'GESTOR' %}selected{% endif %}>Gestor de Planes de Mejoramiento</option>
+                            <option value="GESTOR_COMPRAS" {% if perfil_usuario.tipo_perfil == 'GESTOR_COMPRAS' %}selected{% endif %}>Gestor de Compras</option>
+                            <option value="TECNICO" {% if perfil_usuario.tipo_perfil == 'TECNICO' %}selected{% endif %}>Técnico</option>
+                            <option value="PROVEEDOR" {% if perfil_usuario.tipo_perfil == 'PROVEEDOR' %}selected{% endif %}>Proveedor</option>
+                        </select>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'gestor_lista_usuarios' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Estado del usuario -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">Estado del Usuario</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span>Estado actual:</span>
+                    {% if perfil_usuario.activo %}
+                        <span class="badge bg-success">Activo</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Inactivo</span>
+                    {% endif %}
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="accion" value="cambiar_estado">
+                    <button type="submit" class="btn btn-warning w-100">
+                        {% if perfil_usuario.activo %}
+                            <i class="bi bi-lock"></i> Desactivar Usuario
+                        {% else %}
+                            <i class="bi bi-unlock"></i> Activar Usuario
+                        {% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Resetear contraseña -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Contraseña</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="accion" value="resetear_password">
+
+                    <div class="mb-3">
+                        <label for="nueva_password" class="form-label">Nueva Contraseña</label>
+                        <input type="password" class="form-control" id="nueva_password" name="nueva_password" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-danger w-100">
+                        <i class="bi bi-key"></i> Resetear Contraseña
+                    </button>
+                </form>
+
+                <div class="alert alert-info mt-3 mb-0">
+                    <small>
+                        <i class="bi bi-info-circle"></i>
+                        El usuario deberá cambiar su contraseña en el próximo acceso.
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información adicional -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Información</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-2"><strong>Fecha de registro:</strong><br>
+                <small>{{ usuario_editado.date_joined|date:"d/m/Y H:i" }}</small></p>
+
+                <p class="mb-2"><strong>Último acceso:</strong><br>
+                <small>{{ usuario_editado.last_login|date:"d/m/Y H:i"|default:"Nunca" }}</small></p>
+
+                {% if perfil_usuario.requiere_cambio_password %}
+                <div class="alert alert-warning mb-0 mt-2">
+                    <small><i class="bi bi-exclamation-triangle"></i> Requiere cambio de contraseña</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

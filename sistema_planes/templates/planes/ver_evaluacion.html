@@ -1,0 +1,1621 @@
+{% extends 'base.html' %}
+{% load plan_tags %}
+
+{% block title %}Evaluación - {{ evaluacion.proveedor.razon_social }}{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                {% if es_proveedor %}
+                <li class="breadcrumb-item"><a href="{% url 'proveedor_dashboard' %}">Dashboard</a></li>
+                {% else %}
+                <li class="breadcrumb-item"><a href="{% url 'tecnico_panel' %}">Panel Técnico</a></li>
+                {% endif %}
+                <li class="breadcrumb-item active">Ver Evaluación</li>
+            </ol>
+        </nav>
+        <h1><i class="bi bi-clipboard-data"></i> Evaluación de Desempeño</h1>
+        <p class="text-muted">{{ evaluacion.proveedor.razon_social }} - {{ evaluacion.fecha|date:"d/m/Y" }}</p>
+    </div>
+</div>
+
+<!-- Información del Proveedor -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-building"></i> Información del Proveedor</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-borderless">
+                    <tbody>
+                        <tr>
+                            <td><strong>NIT:</strong></td>
+                            <td>{{ evaluacion.proveedor.nit }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Razón Social:</strong></td>
+                            <td>{{ evaluacion.proveedor.razon_social }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Email:</strong></td>
+                            <td>{{ evaluacion.proveedor.email }}</td>
+                        </tr>
+                        {% if evaluacion.proveedor.email_adicional %}
+                        <tr>
+                            <td><strong>Email Adicional:</strong></td>
+                            <td>{{ evaluacion.proveedor.email_adicional }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <td><strong>N° Contrato:</strong></td>
+                            <td>{{ evaluacion.numero_contrato|default:"—" }}</td>
+                        </tr>
+                        {% if not es_proveedor %}
+                        <tr>
+                            <td><strong>Tipo de Contrato:</strong></td>
+                            <td>{{ evaluacion.get_tipo_contrato_display|default:"—" }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <td><strong>Subcategoría:</strong></td>
+                            <td>{{ evaluacion.subcategoria|default:"—" }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progreso del Proceso -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Progreso del Proceso</h5>
+            {% if evaluacion.puntaje < 80 %}
+                {% if plan %}
+                    {% if plan.estado != 'PM_RADICADO' and plan.estado != 'APROBADO' and plan.estado != 'CANCELACION_RADICADA' and dias_transcurridos <= 30 %}
+            <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalAbandonarProceso">
+                <i class="bi bi-x-circle"></i> No Presentaré Plan
+            </button>
+                    {% endif %}
+                {% else %}
+                    {% if dias_transcurridos <= 30 %}
+            <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalAbandonarProceso">
+                <i class="bi bi-x-circle"></i> No Presentaré Plan
+            </button>
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="timeline">
+            <!-- Etapa 1: Generación de Evaluación -->
+            <div class="timeline-item completed">
+                <div class="timeline-marker">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="mb-0">
+                            <span class="badge bg-success me-2">1</span>
+                            <strong>Generación de Evaluación</strong>
+                        </h6>
+                        <small class="text-muted">{{ evaluacion.fecha|date:"d/m/Y" }}</small>
+                    </div>
+                    <p class="text-muted mb-2">
+                        Evaluación de proveedor realizada en app "Evaluación de Proveedores"
+                    </p>
+                    <div class="alert alert-light border mb-0">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <small class="text-muted">Fecha de creación:</small><br>
+                                <strong>{{ evaluacion.fecha|date:"d/m/Y" }}</strong>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">Proveedor:</small><br>
+                                <strong>{{ evaluacion.proveedor.razon_social }}</strong>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">Tipo de Contrato:</small><br>
+                                <strong>{{ evaluacion.get_tipo_contrato_display|default:"—" }}</strong>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">N° Contrato/Orden:</small><br>
+                                <strong>{{ evaluacion.numero_contrato|default:"—" }}</strong>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">Subcategoría:</small><br>
+                                <strong>{{ evaluacion.subcategoria|default:"—" }}</strong>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">Puntaje Total:</small><br>
+                                <strong class="{% if evaluacion.puntaje >= 80 %}text-success{% elif evaluacion.puntaje >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                                    {{ evaluacion.puntaje }}/100
+                                </strong>
+                                {% if evaluacion.puntaje >= 80 %}
+                                    <span class="badge bg-success ms-2">SATISFACTORIO</span>
+                                {% elif evaluacion.puntaje >= 60 %}
+                                    <span class="badge bg-warning text-dark ms-2">ACEPTABLE</span>
+                                {% else %}
+                                    <span class="badge bg-danger ms-2">CRÍTICO</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Etapa 2: Proceso de Firmas -->
+            <div class="timeline-item completed">
+                <div class="timeline-marker">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h6 class="mb-0">
+                            <span class="badge bg-success me-2">2</span>
+                            <strong>Proceso de Firmas</strong>
+                        </h6>
+                        {% if evaluacion.fecha_cambio_estado_firma %}
+                        <small class="text-muted">{{ evaluacion.fecha_cambio_estado_firma|date:"d/m/Y H:i" }}</small>
+                        {% elif evaluacion.fecha %}
+                        <small class="text-muted">{{ evaluacion.fecha|date:"d/m/Y" }}</small>
+                        {% endif %}
+                    </div>
+                    <p class="text-muted mb-2 small">
+                        Evaluación de proveedor realizada en app "Evaluación de Proveedores"
+                    </p>
+
+                    <div class="alert alert-success py-2 px-2 mb-0">
+                        <small><strong><i class="bi bi-pen-fill"></i> Información de Firmas</strong></small>
+                        <div class="row g-2 mt-1">
+                            <div class="col-md-6">
+                                <small class="text-muted">Fecha de firma:</small><br>
+                                <small><strong>
+                                    {% if evaluacion.fecha_cambio_estado_firma %}
+                                        {{ evaluacion.fecha_cambio_estado_firma|date:"d/m/Y H:i" }}
+                                    {% elif evaluacion.fecha %}
+                                        {{ evaluacion.fecha|date:"d/m/Y" }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </strong></small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">Responsable:</small><br>
+                                <small><strong>
+                                    {% if evaluacion.tecnico_asignado %}
+                                        {{ evaluacion.tecnico_asignado.get_full_name|default:evaluacion.tecnico_asignado.username }}
+                                    {% else %}
+                                        Gestor X
+                                    {% endif %}
+                                </strong></small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">Estado:</small><br>
+                                <span class="badge bg-success"><small>Firmado y Enviado</small></span>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">Observaciones:</small><br>
+                                <small><strong>
+                                    {% if evaluacion.observaciones_firma %}
+                                        {{ evaluacion.observaciones_firma }}
+                                    {% else %}
+                                        Proceso completado correctamente
+                                    {% endif %}
+                                </strong></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Etapa 3: Firmado y Enviado -->
+            <div class="timeline-item completed">
+                <div class="timeline-marker">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h6 class="mb-0">
+                            <span class="badge bg-success me-2">3</span>
+                            <strong>Firmado y Enviado</strong>
+                        </h6>
+                        {% if evaluacion.fecha_cambio_estado_firma %}
+                        <small class="text-muted">{{ evaluacion.fecha_cambio_estado_firma|date:"d/m/Y H:i" }}</small>
+                        {% elif evaluacion.fecha %}
+                        <small class="text-muted">{{ evaluacion.fecha|date:"d/m/Y" }}</small>
+                        {% endif %}
+                    </div>
+                    <p class="text-muted mb-2 small">
+                        Evaluación de proveedor realizada en app "Evaluación de Proveedores"
+                    </p>
+
+                    <!-- Información de Notificación al Proveedor -->
+                    <div class="alert alert-success py-2 px-2 mb-2">
+                        <small><strong><i class="bi bi-envelope-check"></i> Notificación al Proveedor</strong></small>
+                        <div class="row g-2 mt-1">
+                            <div class="col-4">
+                                <small class="text-muted">Fecha:</small><br>
+                                <small><strong>
+                                    {% if evaluacion.fecha_cambio_estado_firma %}
+                                        {{ evaluacion.fecha_cambio_estado_firma|date:"d/m/Y H:i" }}
+                                    {% elif evaluacion.fecha %}
+                                        {{ evaluacion.fecha|date:"d/m/Y" }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </strong></small>
+                            </div>
+                            <div class="col-4">
+                                <small class="text-muted">Usuario:</small><br>
+                                {% if evaluacion.proveedor.user %}
+                                    <span class="badge bg-success"><small>Existente</small></span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark"><small>Por crear</small></span>
+                                {% endif %}
+                            </div>
+                            <div class="col-4">
+                                <small class="text-muted">Contador de días:</small><br>
+                                {% if not plan or plan.estado in 'BORRADOR,ENVIADO,SOLICITUD_AJUSTES,PM_REEVALUADO' %}
+                                    <small><strong>
+                                        <i class="bi bi-hourglass-split {% if dias_sin_plan >= 30 %}text-danger{% elif dias_sin_plan >= 25 %}text-warning{% else %}text-success{% endif %}"></i>
+                                        <span class="{% if dias_sin_plan >= 30 %}text-danger{% elif dias_sin_plan >= 25 %}text-warning{% else %}text-success{% endif %}">
+                                            {{ dias_sin_plan }}/30 días
+                                        </span>
+                                    </strong></small>
+                                    {% if dias_sin_plan >= 30 %}
+                                        <br><span class="badge bg-danger mt-1"><small>¡Plazo vencido!</small></span>
+                                    {% elif dias_sin_plan >= 25 %}
+                                        <br><span class="badge bg-warning text-dark mt-1"><small>{{ dias_restantes }} días restantes</small></span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-secondary"><small>Plan recibido</small></span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Barra de progreso del plazo -->
+                        {% if not plan or plan.estado in 'BORRADOR,ENVIADO,SOLICITUD_AJUSTES,PM_REEVALUADO' %}
+                        <div class="mt-2">
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar {% if porcentaje_transcurrido >= 100 %}bg-danger{% elif porcentaje_transcurrido >= 83 %}bg-warning{% else %}bg-success{% endif %}"
+                                     role="progressbar"
+                                     style="width: {{ porcentaje_transcurrido }}%;"
+                                     aria-valuenow="{{ dias_sin_plan }}"
+                                     aria-valuemin="0"
+                                     aria-valuemax="30">
+                                    <small><strong>{{ dias_sin_plan }}/30 días</strong></small>
+                                </div>
+                            </div>
+                            {% if dias_sin_plan >= 30 %}
+                            <div class="mt-1">
+                                <small class="text-danger"><i class="bi bi-exclamation-triangle-fill"></i> <strong>Si pasan 30 días sin carga → "No recibido" (automático)</strong></small>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        {% if evaluacion.resumen_notificacion %}
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-outline-success py-0 px-2" type="button" data-bs-toggle="collapse" data-bs-target="#resumenNotificacion">
+                                <small><i class="bi bi-eye"></i> Ver resumen</small>
+                            </button>
+                            <div class="collapse mt-2" id="resumenNotificacion">
+                                <div class="card card-body bg-light p-2">
+                                    <pre class="mb-0 text-dark small" style="white-space: pre-wrap;">{{ evaluacion.resumen_notificacion }}</pre>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Etapa 4: Selección de Ruta de Acción -->
+            <div class="timeline-item {% if evaluacion.estado_flujo_evaluacion and evaluacion.estado_flujo_evaluacion != 'FLUJO_NORMAL' or evaluacion.estado_flujo_evaluacion == 'FLUJO_NORMAL' and evaluacion.fecha_cambio_estado_flujo %}completed{% endif %}">
+                <div class="timeline-marker">
+                    {% if evaluacion.estado_flujo_evaluacion == 'FALTA_ETICA' %}
+                        <i class="bi bi-x-circle-fill text-danger"></i>
+                    {% elif evaluacion.estado_flujo_evaluacion == 'ACLARACION' %}
+                        <i class="bi bi-arrow-repeat text-purple"></i>
+                    {% elif evaluacion.estado_flujo_evaluacion == 'REEVALUADO' %}
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                    {% elif evaluacion.estado_flujo_evaluacion == 'FLUJO_NORMAL' and evaluacion.fecha_cambio_estado_flujo %}
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                    {% else %}
+                        <i class="bi bi-diagram-3 text-info"></i>
+                    {% endif %}
+                </div>
+                <div class="timeline-content">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h6 class="mb-0">
+                            <span class="badge
+                                {% if evaluacion.estado_flujo_evaluacion == 'FALTA_ETICA' %}bg-danger
+                                {% elif evaluacion.estado_flujo_evaluacion in 'ACLARACION,REEVALUADO' %}bg-purple
+                                {% elif evaluacion.estado_flujo_evaluacion == 'FLUJO_NORMAL' and evaluacion.fecha_cambio_estado_flujo %}bg-success
+                                {% else %}bg-info{% endif %} me-2">4</span>
+                            <strong>Selección de Ruta</strong>
+                            {% if evaluacion.estado_flujo_evaluacion and evaluacion.estado_flujo_evaluacion != 'FLUJO_NORMAL' or evaluacion.estado_flujo_evaluacion == 'FLUJO_NORMAL' and evaluacion.fecha_cambio_estado_flujo %}
+                                <span class="badge
+                                    {% if evaluacion.estado_flujo_evaluacion == 'FALTA_ETICA' %}bg-danger
+                                    {% elif evaluacion.estado_flujo_evaluacion in 'ACLARACION,REEVALUADO' %}bg-purple
+                                    {% else %}bg-success{% endif %} ms-2">
+                                    {% if evaluacion.estado_flujo_evaluacion == 'FALTA_ETICA' %}🔴 Falta de ética
+                                    {% elif evaluacion.estado_flujo_evaluacion == 'ACLARACION' %}🟣 Aclaración
+                                    {% elif evaluacion.estado_flujo_evaluacion == 'REEVALUADO' %}🟣 Reevaluado
+                                    {% else %}🟢 Flujo normal{% endif %}
+                                </span>
+                            {% endif %}
+                        </h6>
+                        {% if evaluacion.fecha_cambio_estado_flujo %}
+                        <small class="text-muted">{{ evaluacion.fecha_cambio_estado_flujo|date:"d/m/Y H:i" }}</small>
+                        {% endif %}
+                    </div>
+
+                    {% if not evaluacion.estado_flujo_evaluacion or evaluacion.estado_flujo_evaluacion == 'FLUJO_NORMAL' and not evaluacion.fecha_cambio_estado_flujo %}
+                        <p class="text-muted mb-2 small">
+                            El técnico debe seleccionar la ruta de acción correspondiente.
+                        </p>
+                        {% if es_tecnico or es_gestor %}
+                            {% if plan and plan.estado in 'RECHAZADO,CANCELACION_RADICADA' %}
+                            <button type="button" class="btn btn-secondary btn-sm" disabled>
+                                <i class="bi bi-x-circle"></i> Proceso Cancelado
+                            </button>
+                            <div class="alert alert-warning py-2 px-2 mb-0 mt-2">
+                                <small><i class="bi bi-info-circle"></i> No se puede seleccionar ruta porque el proveedor canceló el proceso.</small>
+                            </div>
+                            {% else %}
+                            <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#modalSeleccionRuta">
+                                <i class="bi bi-signpost-split"></i> Seleccionar Ruta de Acción
+                            </button>
+                            {% endif %}
+                        {% else %}
+                        <div class="alert alert-info py-2 px-2 mb-0">
+                            <small><i class="bi bi-hourglass-split"></i> Esperando que el técnico seleccione la ruta de acción.</small>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted mb-2 small">
+                            {% if evaluacion.estado_flujo_evaluacion == 'FALTA_ETICA' %}
+                                🔴 <strong>Falta de ética</strong> → Técnico define falta y app notifica suspensión (5 años) → FIN
+                            {% elif evaluacion.estado_flujo_evaluacion == 'ACLARACION' %}
+                                🟣 <strong>Aclaración</strong> → Proveedor solicita revisión → Reevaluación (≥80 = FIN / &lt;80 continúa)
+                            {% elif evaluacion.estado_flujo_evaluacion == 'REEVALUADO' %}
+                                🟣 <strong>Reevaluado</strong> → Resultado de la reevaluación
+                            {% else %}
+                                🟢 <strong>Flujo normal</strong> → Proveedor debe presentar plan de mejoramiento
+                            {% endif %}
+                        </p>
+
+                        <div class="alert alert-light border py-2 px-2 mb-2">
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <small class="text-muted">Responsable:</small><br>
+                                    <small><strong>
+                                        {% if evaluacion.tecnico_asignado %}
+                                            {{ evaluacion.tecnico_asignado.get_full_name|default:evaluacion.tecnico_asignado.username }}
+                                        {% else %}
+                                            Gestor X
+                                        {% endif %}
+                                    </strong></small>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if evaluacion.observaciones_flujo %}
+                        <div class="alert alert-light border py-2 px-2 mb-0">
+                            <small><strong>Observaciones:</strong> {{ evaluacion.observaciones_flujo }}</small>
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Modal: Selección de Ruta de Acción -->
+            {% if es_tecnico or es_gestor %}
+            <div class="modal fade" id="modalSeleccionRuta" tabindex="-1" aria-labelledby="modalSeleccionRutaLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-info text-white">
+                            <h5 class="modal-title" id="modalSeleccionRutaLabel">
+                                <i class="bi bi-signpost-split"></i> Seleccionar Ruta de Acción
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="cambiar_estado_flujo" value="1">
+                            <div class="modal-body">
+                                <p class="text-muted mb-3">Seleccione la ruta de acción correspondiente según el caso:</p>
+
+                                <div class="mb-3">
+                                    <label class="form-label"><strong>Ruta de Acción:</strong></label>
+                                    <select name="estado_flujo" class="form-select" id="rutaAccion" required>
+                                        <option value="">-- Seleccione una ruta --</option>
+                                        <option value="FALTA_ETICA">🔴 4A - Falta de ética (Suspensión 5 años → FIN)</option>
+                                        <option value="ACLARACION">🟣 4B - Aclaración (Proveedor solicita revisión)</option>
+                                        <option value="FLUJO_NORMAL">🟢 4C - Flujo normal (Plan de mejoramiento)</option>
+                                    </select>
+                                </div>
+
+                                <!-- Descripción de cada ruta -->
+                                <div id="descripcionRuta" class="alert alert-light border d-none mb-3">
+                                    <div id="descFaltaEtica" class="d-none">
+                                        <h6 class="text-danger"><i class="bi bi-x-circle-fill"></i> Falta de ética</h6>
+                                        <p class="mb-0">El técnico define que existe una falta de ética grave. El sistema notificará al proveedor sobre su suspensión por 5 años. El proceso finaliza inmediatamente.</p>
+                                    </div>
+                                    <div id="descAclaracion" class="d-none">
+                                        <h6 class="text-purple"><i class="bi bi-arrow-repeat"></i> Aclaración</h6>
+                                        <p class="mb-0">El proveedor solicita una revisión o aclaración de la evaluación. Se realizará una reevaluación en el aplicativo "Evaluación de Proveedores". Si el nuevo puntaje es ≥80, el caso se cierra. Si es &lt;80, continúa con el plan de mejoramiento.</p>
+                                    </div>
+                                    <div id="descFlujoNormal" class="d-none">
+                                        <h6 class="text-success"><i class="bi bi-check-circle"></i> Flujo normal</h6>
+                                        <p class="mb-0">El proveedor debe presentar un plan de mejoramiento. Tiene 30 días calendario para cargar el plan. Si no lo presenta, el proceso se marca como "No recibido".</p>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label"><strong>Observaciones:</strong></label>
+                                    <textarea name="observaciones_flujo" class="form-control" rows="3" placeholder="Ingrese observaciones sobre esta decisión..." required></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </button>
+                                <button type="submit" class="btn btn-info" onclick="return confirm('¿Confirmar la selección de esta ruta?')">
+                                    <i class="bi bi-check-circle"></i> Guardar Ruta
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                // Mostrar descripción de la ruta seleccionada
+                document.getElementById('rutaAccion')?.addEventListener('change', function() {
+                    const descripcionRuta = document.getElementById('descripcionRuta');
+                    const descFaltaEtica = document.getElementById('descFaltaEtica');
+                    const descAclaracion = document.getElementById('descAclaracion');
+                    const descFlujoNormal = document.getElementById('descFlujoNormal');
+
+                    // Ocultar todas las descripciones
+                    descFaltaEtica?.classList.add('d-none');
+                    descAclaracion?.classList.add('d-none');
+                    descFlujoNormal?.classList.add('d-none');
+
+                    // Mostrar la descripción correspondiente
+                    if (this.value === 'FALTA_ETICA') {
+                        descripcionRuta?.classList.remove('d-none');
+                        descFaltaEtica?.classList.remove('d-none');
+                    } else if (this.value === 'ACLARACION') {
+                        descripcionRuta?.classList.remove('d-none');
+                        descAclaracion?.classList.remove('d-none');
+                    } else if (this.value === 'FLUJO_NORMAL') {
+                        descripcionRuta?.classList.remove('d-none');
+                        descFlujoNormal?.classList.remove('d-none');
+                    } else {
+                        descripcionRuta?.classList.add('d-none');
+                    }
+                });
+            </script>
+            {% endif %}
+
+
+            <!-- Etapa 4A: Falta de Ética -->
+            {% if evaluacion.estado_flujo_evaluacion == 'FALTA_ETICA' and evaluacion.fecha_cambio_estado_flujo %}
+            <div class="timeline-item">
+                <div class="timeline-marker">
+                    <i class="bi bi-x-circle-fill text-danger"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h6 class="mb-0">
+                            <span class="badge bg-danger me-2">4A</span>
+                            <strong>Ruta 1 – Falta de ética</strong>
+                        </h6>
+                        {% if evaluacion.fecha_cambio_estado_flujo %}
+                        <small class="text-muted">{{ evaluacion.fecha_cambio_estado_flujo|date:"d/m/Y H:i" }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="alert alert-danger py-2 px-2 mb-0">
+                        <small><strong><i class="bi bi-exclamation-triangle-fill"></i> Suspensión por Falta de Ética</strong></small>
+                        <p class="mb-1 mt-1 small">El proveedor queda suspendido por <strong>5 años</strong>.</p>
+
+                        {% if evaluacion.observaciones_flujo %}
+                        <div class="mt-1">
+                            <small><strong>Observaciones:</strong> {{ evaluacion.observaciones_flujo }}</small>
+                        </div>
+                        {% endif %}
+
+                        <div class="mt-2">
+                            <span class="badge bg-dark"><small><i class="bi bi-x-circle"></i> FIN DEL FLUJO</small></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Etapa 4B: Aclaración - Esperando Reevaluación -->
+            {% if evaluacion.fecha_cambio_estado_flujo and evaluacion.estado_flujo_evaluacion == 'ACLARACION' %}
+            <div class="timeline-item">
+                <div class="timeline-marker">
+                    <i class="bi bi-hourglass-split text-purple"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h6 class="mb-0">
+                            <span class="badge bg-purple me-2">4B</span>
+                            <strong>Ruta 2 – Aclaración (Esperando Reevaluación)</strong>
+                        </h6>
+                        {% if evaluacion.fecha_cambio_estado_flujo %}
+                        <small class="text-muted">{{ evaluacion.fecha_cambio_estado_flujo|date:"d/m/Y H:i" }}</small>
+                        {% endif %}
+                    </div>
+                    <p class="text-muted mb-2 small">
+                        Reevaluación se realiza en app "Evaluación de Proveedores"
+                    </p>
+                    <div class="alert alert-warning py-2 px-2 mb-0">
+                        <small><strong><i class="bi bi-arrow-repeat"></i> Proceso de Aclaración</strong></small>
+                        <p class="mb-1 mt-1 small">El proveedor envía carta de aclaración. Se realizará reevaluación en el aplicativo "Evaluación de Proveedores".</p>
+
+                        <div class="row g-2 my-2">
+                            <div class="col-md-6">
+                                <small class="text-muted">Puntaje Original:</small><br>
+                                <strong class="{% if evaluacion.puntaje >= 80 %}text-success{% elif evaluacion.puntaje >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                                    {{ evaluacion.puntaje }}/100
+                                </strong>
+                                {% if evaluacion.puntaje >= 80 %}
+                                    <span class="badge bg-success ms-2">SATISFACTORIO</span>
+                                {% elif evaluacion.puntaje >= 60 %}
+                                    <span class="badge bg-warning text-dark ms-2">ACEPTABLE</span>
+                                {% else %}
+                                    <span class="badge bg-danger ms-2">CRÍTICO</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info py-1 px-2 mt-2 mb-0">
+                            <small><i class="bi bi-info-circle"></i> <strong>Esperando resultado de reevaluación...</strong></small>
+                            <p class="mb-0 mt-1 small">Una vez completada la reevaluación en el otro aplicativo, la información se actualizará automáticamente aquí.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Etapa 4B: Reevaluación Completada -->
+            {% if evaluacion.fecha_cambio_estado_flujo and evaluacion.estado_flujo_evaluacion == 'REEVALUADO' %}
+            <div class="timeline-item completed">
+                <div class="timeline-marker">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h6 class="mb-0">
+                            <span class="badge bg-success me-2">4B</span>
+                            <strong>Ruta 2 – Reevaluación Completada</strong>
+                        </h6>
+                        {% if evaluacion.fecha_reevaluacion %}
+                        <small class="text-muted">{{ evaluacion.fecha_reevaluacion|date:"d/m/Y" }}</small>
+                        {% endif %}
+                    </div>
+                    <p class="text-muted mb-2 small">
+                        Reevaluación realizada en app "Evaluación de Proveedores"
+                    </p>
+
+                    <div class="alert alert-success py-2 px-2 mb-0">
+                        <small><strong><i class="bi bi-clipboard-check"></i> Información de Reevaluación</strong></small>
+                        <div class="row g-2 mt-1">
+                            <div class="col-md-3">
+                                <small class="text-muted">Fecha:</small><br>
+                                <small><strong>{{ evaluacion.fecha_reevaluacion|date:"d/m/Y"|default:"—" }}</strong></small>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted">Puntaje Original:</small><br>
+                                <small><strong class="{% if evaluacion.puntaje >= 80 %}text-success{% elif evaluacion.puntaje >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                                    {{ evaluacion.puntaje }}/100
+                                </strong></small>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted">Puntaje Nuevo:</small><br>
+                                <small><strong class="{% if evaluacion.puntaje_reevaluacion >= 80 %}text-success{% elif evaluacion.puntaje_reevaluacion >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                                    {{ evaluacion.puntaje_reevaluacion|default:"—" }}/100
+                                </strong></small>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted">Responsable:</small><br>
+                                <small><strong>
+                                    {% if evaluacion.tecnico_asignado %}
+                                        {{ evaluacion.tecnico_asignado.get_full_name|default:evaluacion.tecnico_asignado.username }}
+                                    {% else %}
+                                        Gestor X
+                                    {% endif %}
+                                </strong></small>
+                            </div>
+                        </div>
+
+                        {% if evaluacion.observaciones_flujo %}
+                        <div class="mt-2 pt-2 border-top">
+                            <small class="text-muted">Observaciones:</small><br>
+                            <small>{{ evaluacion.observaciones_flujo }}</small>
+                        </div>
+                        {% endif %}
+
+                        {% if evaluacion.puntaje_reevaluacion %}
+                        <div class="mt-2 pt-2 border-top">
+                            {% if evaluacion.puntaje_reevaluacion >= 80 %}
+                                <span class="badge bg-success"><small><i class="bi bi-check-circle"></i> Puntaje ≥80: Caso cerrado - No requiere plan de mejoramiento</small></span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark"><small><i class="bi bi-arrow-right"></i> Puntaje &lt;80: Continúa con plan de mejoramiento</small></span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Etapa 4C: Flujo Normal -->
+            {% if evaluacion.estado_flujo_evaluacion == 'FLUJO_NORMAL' and evaluacion.fecha_cambio_estado_flujo %}
+            <div class="timeline-item">
+                <div class="timeline-marker">
+                    <i class="bi bi-circle-fill text-success"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h6 class="mb-0">
+                            <span class="badge bg-success me-2">4C</span>
+                            <strong>Ruta 3 – Sin aclaración</strong>
+                        </h6>
+                    </div>
+                    <div class="alert alert-success py-2 px-2 mb-0">
+                        <small><strong><i class="bi bi-check-circle"></i> Esperando aprobación</strong></small>
+                        <p class="mb-1 mt-1 small">El proveedor carga su plan de mejoramiento. Si en <strong>30 días</strong> no se recibe → <em>No recibido</em>.</p>
+
+                        {% if evaluacion.observaciones_flujo %}
+                        <div class="mt-1">
+                            <small><strong>Observaciones:</strong> {{ evaluacion.observaciones_flujo }}</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Etapa 5: Carga del Plan de Mejoramiento -->
+            {% if plan and plan.estado in 'BORRADOR,ENVIADO,SOLICITUD_AJUSTES,PM_REEVALUADO' and evaluacion.fecha_cambio_estado_flujo and dias_sin_plan < 30 %}
+                {% if evaluacion.estado_flujo_evaluacion == 'FLUJO_NORMAL' or evaluacion.estado_flujo_evaluacion == 'REEVALUADO' and evaluacion.puntaje_reevaluacion < 80 %}
+            <div class="timeline-item {% if plan.estado == 'ENVIADO' %}completed{% endif %}">
+                <div class="timeline-marker">
+                    {% if plan.estado == 'ENVIADO' %}
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                    {% else %}
+                        <i class="bi bi-file-earmark-text text-primary"></i>
+                    {% endif %}
+                </div>
+                <div class="timeline-content">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h6 class="mb-0">
+                            <span class="badge {% if plan.estado == 'ENVIADO' %}bg-success{% else %}bg-primary{% endif %} me-2">5</span>
+                            <strong>Carga del Plan</strong>
+                        </h6>
+                        {% if plan.fecha_envio %}
+                        <small class="text-muted">{{ plan.fecha_envio|date:"d/m/Y H:i" }}</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="alert alert-{% if plan.estado == 'ENVIADO' or plan.estado == 'PM_REEVALUADO' %}success{% elif plan.estado == 'SOLICITUD_AJUSTES' %}warning{% else %}info{% endif %} py-2 px-2 mb-0">
+                        <small><strong>
+                            <i class="bi bi-{% if plan.estado == 'ENVIADO' or plan.estado == 'PM_REEVALUADO' %}check-circle{% elif plan.estado == 'SOLICITUD_AJUSTES' %}exclamation-triangle{% else %}upload{% endif %}"></i>
+                            {% if plan.estado == 'ENVIADO' %}Plan Enviado
+                            {% elif plan.estado == 'PM_REEVALUADO' %}Plan Reevaluado
+                            {% elif plan.estado == 'SOLICITUD_AJUSTES' %}Ajustes Requeridos
+                            {% else %}En Borrador{% endif %}
+                        </strong></small>
+
+                        <div class="row g-2 mt-2 mb-2">
+                            <div class="col-md-6">
+                                <small class="text-muted">Responsable:</small><br>
+                                <small><strong>Proveedor - {{ evaluacion.proveedor.razon_social }}</strong></small>
+                            </div>
+                        </div>
+
+                        {% if plan.estado == 'BORRADOR' %}
+                        <p class="mb-2 mt-1 small">El proveedor debe cargar causas raíz, acciones, responsables y fechas.</p>
+                        <a href="{% url 'ver_plan' plan.id %}" class="btn btn-primary btn-sm"><i class="bi bi-pencil-square"></i> Editar Plan</a>
+                        <div class="alert alert-warning py-1 px-2 mt-2 mb-0">
+                            <small><i class="bi bi-info-circle"></i> Solo el proveedor puede llenar y enviar el plan para revisión (a futuro).</small>
+                        </div>
+
+                        {% elif plan.estado == 'SOLICITUD_AJUSTES' %}
+                        {% if plan.comentarios_tecnico %}
+                        <div class="alert alert-danger py-1 px-2 my-1">
+                            <small><strong>Observaciones:</strong> {{ plan.comentarios_tecnico|linebreaks }}</small>
+                        </div>
+                        {% endif %}
+                        {% if es_proveedor %}
+                        <a href="{% url 'ver_plan' plan.id %}" class="btn btn-warning btn-sm mt-1"><i class="bi bi-pencil-square"></i> Editar y Corregir</a>
+                        {% else %}
+                        <a href="{% url 'ver_plan' plan.id %}" class="btn btn-outline-warning btn-sm mt-1"><i class="bi bi-eye"></i> Ver Plan</a>
+                        {% endif %}
+
+                        {% elif plan.estado == 'ENVIADO' or plan.estado == 'PM_REEVALUADO' %}
+                        <p class="mb-1 mt-1 small">Plan {% if plan.estado == 'PM_REEVALUADO' %}reenviado{% else %}enviado{% endif %} para revisión.</p>
+                        <a href="{% url 'ver_plan' plan.id %}" class="btn btn-primary btn-sm mt-1"><i class="bi bi-eye"></i> Ver Plan</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+                {% endif %}
+            {% endif %}
+
+            <!-- Etapa 5.X: Historial de Revisión y Corrección del Plan -->
+            {% if plan and historial_revision_plan %}
+                {% if evaluacion.estado_flujo_evaluacion == 'FLUJO_NORMAL' or evaluacion.estado_flujo_evaluacion == 'REEVALUADO' and evaluacion.puntaje_reevaluacion < 80 %}
+
+            <!-- Mostrar historial completo de pasos -->
+            {% for cambio in historial_revision_plan %}
+            {% with forloop_counter=forloop.counter %}
+
+            <!-- Paso completado de revisión (5.1, 5.3, 5.5, ...) -->
+            {% if cambio.estado_nuevo in 'ENVIADO,PM_REEVALUADO' %}
+            <div class="timeline-item completed">
+                <div class="timeline-marker">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h6 class="mb-0">
+                            <span class="badge bg-success me-2">5.{{ forloop_counter }}</span>
+                            <strong>{% if cambio.estado_nuevo == 'PM_REEVALUADO' %}Plan Reevaluado{% else %}Plan Enviado{% endif %}</strong>
+                        </h6>
+                        <small class="text-muted">{{ cambio.fecha_cambio|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    <div class="alert alert-success py-2 px-2 mb-0">
+                        <small><i class="bi bi-check-circle"></i> {% if cambio.estado_nuevo == 'PM_REEVALUADO' %}Corrigió y reenvió{% else %}Envió{% endif %} el plan.</small>
+                        <div class="mt-2">
+                            <a href="{% url 'ver_plan' plan.id %}" class="btn btn-success btn-sm">
+                                <i class="bi bi-eye"></i> Ver Plan {% if cambio.estado_nuevo == 'PM_REEVALUADO' %}Corregido{% endif %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Paso completado de solicitud de ajustes (5.2, 5.4, 5.6, ...) -->
+            {% if cambio.estado_nuevo == 'SOLICITUD_AJUSTES' %}
+            <div class="timeline-item completed">
+                <div class="timeline-marker">
+                    <i class="bi bi-check-circle-fill text-warning"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h6 class="mb-0">
+                            <span class="badge bg-warning text-dark me-2">5.{{ forloop_counter }}</span>
+                            <strong>Ajustes Solicitados</strong>
+                        </h6>
+                        <small class="text-muted">{{ cambio.fecha_cambio|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    <p class="text-muted mb-2 small">
+                        El gestor revisó el plan y solicitó ajustes al proveedor.
+                    </p>
+
+                    <div class="alert alert-light border py-2 px-2 mb-2">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <small class="text-muted">Responsable:</small><br>
+                                <small><strong>
+                                    {% if evaluacion.tecnico_asignado %}
+                                        {{ evaluacion.tecnico_asignado.get_full_name|default:evaluacion.tecnico_asignado.username }}
+                                    {% else %}
+                                        Gestor X
+                                    {% endif %}
+                                </strong></small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">Decisión:</small><br>
+                                <span class="badge bg-warning text-dark"><small>❌ Solicitar Ajustes</small></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if cambio.comentario %}
+                    <div class="alert alert-warning py-2 px-2 mb-0">
+                        <small><strong>Observaciones:</strong> {{ cambio.comentario }}</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Paso completado de aprobación (último paso si fue aprobado) -->
+            {% if cambio.estado_nuevo == 'EN_RADICACION' %}
+            <div class="timeline-item completed">
+                <div class="timeline-marker">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h6 class="mb-0">
+                            <span class="badge bg-success me-2">5.{{ forloop_counter }}</span>
+                            <strong>Plan Aprobado</strong>
+                        </h6>
+                        <small class="text-muted">{{ cambio.fecha_cambio|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    <p class="text-muted mb-2 small">
+                        El gestor revisó y aprobó el plan de mejoramiento.
+                    </p>
+
+                    <div class="alert alert-light border py-2 px-2 mb-2">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <small class="text-muted">Responsable:</small><br>
+                                <small><strong>
+                                    {% if evaluacion.tecnico_asignado %}
+                                        {{ evaluacion.tecnico_asignado.get_full_name|default:evaluacion.tecnico_asignado.username }}
+                                    {% else %}
+                                        Gestor X
+                                    {% endif %}
+                                </strong></small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">Decisión:</small><br>
+                                <span class="badge bg-success"><small>✅ Aprobar Plan</small></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if cambio.comentario %}
+                    <div class="alert alert-success py-2 px-2 mb-0">
+                        <small><strong>Observaciones:</strong> {{ cambio.comentario }}</small>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-success py-1 px-2 mb-0">
+                        <small><i class="bi bi-check-circle"></i> Plan aprobado. En proceso de radicación.</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% endwith %}
+            {% endfor %}
+
+                {% endif %}
+            {% endif %}
+
+            <!-- Paso ACTUAL en proceso (solo si el plan está en revisión o esperando corrección) -->
+            {% if plan and plan.estado in 'ENVIADO,PM_REEVALUADO,SOLICITUD_AJUSTES' %}
+                {% if evaluacion.estado_flujo_evaluacion == 'FLUJO_NORMAL' or evaluacion.estado_flujo_evaluacion == 'REEVALUADO' and evaluacion.puntaje_reevaluacion < 80 %}
+            {% with num_paso_actual=historial_revision_plan|length|add:1 %}
+
+            <!-- Revisión por Técnico ACTIVA (paso actual) -->
+            {% if plan.estado in 'ENVIADO,PM_REEVALUADO' %}
+            {% if es_tecnico or es_gestor %}
+            <div class="timeline-item">
+                <div class="timeline-marker">
+                    <i class="bi bi-clipboard-check text-warning"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h6 class="mb-0">
+                            <span class="badge bg-warning text-dark me-2">5.{{ num_paso_actual }}</span>
+                            <strong>Revisión del Plan {% if num_iteraciones_revision > 0 %}(Iteración {{ num_iteraciones_revision|add:1 }}){% endif %}</strong>
+                        </h6>
+                    </div>
+
+                    <p class="text-muted mb-2 small">
+                        El gestor debe revisar el plan y decidir si aprobarlo o solicitar ajustes.
+                    </p>
+
+                    <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#modalRevisionPlan">
+                        <i class="bi bi-clipboard-check"></i> Realizar Revisión
+                    </button>
+                </div>
+            </div>
+            {% else %}
+            <div class="timeline-item">
+                <div class="timeline-marker">
+                    <i class="bi bi-hourglass-split text-warning"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h6 class="mb-0">
+                            <span class="badge bg-warning text-dark me-2">5.{{ num_paso_actual }}</span>
+                            <strong>Revisión del Plan</strong>
+                        </h6>
+                    </div>
+                    <div class="alert alert-warning py-2 px-2 mb-0">
+                        <small><i class="bi bi-hourglass-split"></i> Esperando que el gestor revise el plan.</small>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+
+            <!-- Modal: Revisión del Plan -->
+            {% if es_tecnico or es_gestor %}
+            <div class="modal fade" id="modalRevisionPlan" tabindex="-1" aria-labelledby="modalRevisionPlanLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-warning text-dark">
+                            <h5 class="modal-title" id="modalRevisionPlanLabel">
+                                <i class="bi bi-clipboard-check"></i> Revisión del Plan de Mejoramiento
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="revisar_plan" value="1">
+                            <div class="modal-body">
+                                <p class="text-muted mb-3">Revise el plan de mejoramiento y tome una decisión:</p>
+
+                                <div class="mb-3">
+                                    <label class="form-label"><strong>Decisión:</strong></label>
+                                    <select name="decision_plan" class="form-select" id="decisionPlan" required>
+                                        <option value="">-- Seleccione una decisión --</option>
+                                        <option value="APROBAR">✅ Aprobar Plan (Pasar a Radicación)</option>
+                                        <option value="SOLICITAR_AJUSTES">❌ Solicitar Ajustes al Proveedor</option>
+                                    </select>
+                                </div>
+
+                                <!-- Descripción de cada decisión -->
+                                <div id="descripcionDecision" class="alert alert-light border d-none mb-3">
+                                    <div id="descAprobar" class="d-none">
+                                        <h6 class="text-success"><i class="bi bi-check-circle-fill"></i> Aprobar Plan</h6>
+                                        <p class="mb-0">El plan cumple con los requisitos y será enviado a radicación. El proceso continúa con el siguiente paso.</p>
+                                    </div>
+                                    <div id="descSolicitarAjustes" class="d-none">
+                                        <h6 class="text-danger"><i class="bi bi-exclamation-triangle-fill"></i> Solicitar Ajustes</h6>
+                                        <p class="mb-0">El plan requiere correcciones. El proveedor será notificado para realizar los ajustes necesarios y reenviarlo.</p>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label"><strong>Observaciones:</strong></label>
+                                    <textarea name="observaciones_plan" class="form-control" rows="3" placeholder="Ingrese observaciones sobre la revisión..." required></textarea>
+                                </div>
+
+                                {% if plan.comentarios_tecnico %}
+                                <div class="alert alert-secondary">
+                                    <h6><i class="bi bi-info-circle"></i> Observaciones anteriores:</h6>
+                                    <p class="mb-0 small">{{ plan.comentarios_tecnico|linebreaks }}</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </button>
+                                <button type="submit" class="btn btn-warning" onclick="return confirm('¿Confirmar esta decisión de revisión?')">
+                                    <i class="bi bi-check-circle"></i> Enviar Revisión
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                // Mostrar descripción de la decisión seleccionada
+                document.getElementById('decisionPlan')?.addEventListener('change', function() {
+                    const descripcionDecision = document.getElementById('descripcionDecision');
+                    const descAprobar = document.getElementById('descAprobar');
+                    const descSolicitarAjustes = document.getElementById('descSolicitarAjustes');
+
+                    // Ocultar todas las descripciones
+                    descAprobar?.classList.add('d-none');
+                    descSolicitarAjustes?.classList.add('d-none');
+
+                    // Mostrar la descripción correspondiente
+                    if (this.value === 'APROBAR') {
+                        descripcionDecision?.classList.remove('d-none');
+                        descAprobar?.classList.remove('d-none');
+                    } else if (this.value === 'SOLICITAR_AJUSTES') {
+                        descripcionDecision?.classList.remove('d-none');
+                        descSolicitarAjustes?.classList.remove('d-none');
+                    } else {
+                        descripcionDecision?.classList.add('d-none');
+                    }
+                });
+            </script>
+            {% endif %}
+
+            <!-- Corrección por Proveedor ACTIVA (paso actual) -->
+            {% if plan.estado == 'SOLICITUD_AJUSTES' %}
+            <div class="timeline-item">
+                <div class="timeline-marker">
+                    <i class="bi bi-pencil-square text-danger"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h6 class="mb-0">
+                            <span class="badge bg-danger me-2">5.{{ num_paso_actual }}</span>
+                            <strong>Corrección del Plan {% if num_iteraciones_revision > 0 %}(Iteración {{ num_iteraciones_revision }}){% endif %}</strong>
+                        </h6>
+                    </div>
+
+                    <div class="alert alert-danger py-2 px-2 mb-0">
+                        <small><strong><i class="bi bi-exclamation-triangle"></i> Se Requieren Ajustes</strong></small>
+
+                        {% if plan.comentarios_tecnico %}
+                        <div class="alert alert-dark py-1 px-2 my-2">
+                            <small><strong>Observaciones:</strong> {{ plan.comentarios_tecnico|linebreaks }}</small>
+                        </div>
+                        {% endif %}
+
+                        <a href="{% url 'ver_plan' plan.id %}" class="btn btn-danger btn-sm mt-1">
+                            <i class="bi bi-pencil-square"></i> Editar y Corregir
+                        </a>
+
+                        <div class="alert alert-info py-1 px-2 mt-2 mb-0">
+                            <small><i class="bi bi-info-circle"></i> Al enviar, pasará a "PM Reevaluado" (Paso 5.{{ num_paso_actual|add:1 }}).</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% endwith %}
+                {% endif %}
+            {% endif %}
+
+            <!-- Paso FINAL: Evaluación Radicada (cuando el plan fue aprobado) -->
+            {% if plan and plan.estado == 'EN_RADICACION' %}
+                {% if evaluacion.estado_flujo_evaluacion == 'FLUJO_NORMAL' or evaluacion.estado_flujo_evaluacion == 'REEVALUADO' and evaluacion.puntaje_reevaluacion < 80 %}
+            <div class="timeline-item completed">
+                <div class="timeline-marker">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h6 class="mb-0">
+                            <span class="badge bg-success me-2">6</span>
+                            <strong>Evaluación Radicada</strong>
+                        </h6>
+                        {% if plan.fecha_revision %}
+                        <small class="text-muted">{{ plan.fecha_revision|date:"d/m/Y H:i" }}</small>
+                        {% endif %}
+                    </div>
+                    <p class="text-muted mb-2 small">
+                        El plan de mejoramiento ha sido aprobado y radicado exitosamente.
+                    </p>
+
+                    <div class="alert alert-light border py-2 px-2 mb-2">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <small class="text-muted">Responsable:</small><br>
+                                <small><strong>
+                                    {% if plan.revisado_por %}
+                                        {{ plan.revisado_por.get_full_name|default:plan.revisado_por.username }}
+                                    {% elif evaluacion.tecnico_asignado %}
+                                        {{ evaluacion.tecnico_asignado.get_full_name|default:evaluacion.tecnico_asignado.username }}
+                                    {% else %}
+                                        Gestor X
+                                    {% endif %}
+                                </strong></small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">Estado:</small><br>
+                                <span class="badge bg-success"><small>✅ Proceso Completado</small></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if plan.comentarios_tecnico %}
+                    <div class="alert alert-success py-2 px-2 mb-2">
+                        <small><strong>Observaciones de aprobación:</strong></small><br>
+                        <small>{{ plan.comentarios_tecnico }}</small>
+                    </div>
+                    {% endif %}
+
+                    <div class="alert alert-success py-2 px-2 mb-0">
+                        <small><strong><i class="bi bi-check-circle-fill"></i> Plan de Mejoramiento Radicado</strong></small>
+                        <p class="mb-2 mt-2 small">El plan ha sido aprobado y radicado. El proveedor debe implementar las acciones comprometidas según el cronograma establecido.</p>
+                        <a href="{% url 'ver_plan' plan.id %}" class="btn btn-success btn-sm">
+                            <i class="bi bi-file-earmark-text"></i> Ver Plan Aprobado
+                        </a>
+                    </div>
+                </div>
+            </div>
+                {% endif %}
+            {% endif %}
+
+            <!-- Plan Rechazado por el Proveedor -->
+            {% if plan and plan.estado == 'RECHAZADO' %}
+            <div class="timeline-item completed">
+                <div class="timeline-marker">
+                    <i class="bi bi-x-circle-fill text-danger"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h6 class="mb-0">
+                            <span class="badge bg-danger me-2">🚫</span>
+                            <strong>Proveedor Canceló - No Presentará Plan</strong>
+                        </h6>
+                        {% if plan.fecha_creacion %}
+                        <small class="text-muted">{{ plan.fecha_creacion|date:"d/m/Y H:i" }}</small>
+                        {% endif %}
+                    </div>
+                    <p class="text-muted mb-2 small">
+                        <i class="bi bi-exclamation-triangle-fill text-danger"></i> El proveedor <strong>{{ evaluacion.proveedor.razon_social }}</strong> comunicó formalmente que <strong>NO presentará el plan de mejoramiento</strong>.
+                    </p>
+
+                    <div class="alert alert-danger border-danger py-2 px-2 mb-2">
+                        <div class="row g-2">
+                            <div class="col-12 mb-1">
+                                <small><strong><i class="bi bi-x-circle"></i> PROCESO CANCELADO POR EL PROVEEDOR</strong></small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">Decisión:</small><br>
+                                <small><strong>NO presentará plan de mejoramiento</strong></small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">Responsable de la decisión:</small><br>
+                                <small><strong>{{ evaluacion.proveedor.razon_social }}</strong></small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subsección: Motivo de la Cancelación -->
+                    {% if plan.comentarios_tecnico %}
+                    <div class="alert alert-light border border-danger py-2 px-2 mb-2">
+                        <small><strong class="text-danger"><i class="bi bi-chat-left-text"></i> Motivo de la cancelación:</strong></small>
+                        <div class="mt-2 p-2 bg-white rounded">
+                            <small>{{ plan.comentarios_tecnico|linebreaks }}</small>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="alert alert-warning border-warning py-2 px-2 mb-0">
+                        {% if es_tecnico or es_gestor %}
+                        <small><strong><i class="bi bi-arrow-right-circle"></i> Siguiente paso del Gestor:</strong></small><br>
+                        <small>Debe radicar formalmente esta cancelación para cerrar definitivamente el proceso.</small>
+
+                        <form method="post" class="mt-2">
+                            {% csrf_token %}
+                            <input type="hidden" name="radicar_cancelacion" value="1">
+
+                            <div class="mb-2">
+                                <label class="form-label mb-1"><small><strong>Observaciones de radicación (opcional):</strong></small></label>
+                                <textarea name="observaciones_cancelacion" class="form-control form-control-sm" rows="2"
+                                          placeholder="Ingrese observaciones sobre la radicación de la cancelación..."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-dark btn-sm" onclick="return confirm('¿Confirmar radicación de la cancelación?\n\nEsta acción cerrará definitivamente el proceso.')">
+                                <i class="bi bi-file-earmark-check"></i> Radicar Cancelación y Cerrar Proceso
+                            </button>
+                        </form>
+                        {% else %}
+                        <small><i class="bi bi-hourglass-split"></i> Esperando que el gestor/técnico radique formalmente la cancelación.</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Cancelación Radicada (FIN DEL PROCESO) -->
+            {% if plan and plan.estado == 'CANCELACION_RADICADA' %}
+            <div class="timeline-item completed">
+                <div class="timeline-marker">
+                    <i class="bi bi-check-circle-fill text-dark"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h6 class="mb-0">
+                            <span class="badge bg-dark me-2">FIN</span>
+                            <strong>Cancelación Radicada</strong>
+                        </h6>
+                        {% if plan.fecha_radicacion %}
+                        <small class="text-muted">{{ plan.fecha_radicacion|date:"d/m/Y H:i" }}</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="alert alert-dark border-dark py-2 px-2 mb-2">
+                        <small><strong><i class="bi bi-check2-circle"></i> PROCESO FINALIZADO</strong></small>
+                        <p class="mb-0 mt-1 small">La cancelación ha sido radicada formalmente. El proceso de mejoramiento ha sido cerrado.</p>
+                    </div>
+
+                    {% if plan.comentarios_tecnico %}
+                    <details open>
+                        <summary class="text-primary fw-bold" style="cursor:pointer;"><small><i class="bi bi-file-text"></i> Ver resumen completo de la cancelación</small></summary>
+                        <div class="mt-2">
+                            <!-- 1. Cancelación por el Proveedor -->
+                            <div class="alert alert-danger border-danger py-2 px-2 mb-2">
+                                <small><strong><i class="bi bi-person-x"></i> 1. Cancelación por el Proveedor</strong></small>
+                                <div class="mt-2">
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <small class="text-muted">Proveedor:</small><br>
+                                            <small><strong>{{ evaluacion.proveedor.razon_social }}</strong></small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-light border py-2 px-2 mb-2">
+                                <small class="text-muted"><strong>Información registrada:</strong></small>
+                                <div class="mt-2" style="white-space: pre-line;">
+                                    <small>{{ plan.comentarios_tecnico|split:"--- RADICACIÓN DE CANCELACIÓN ---"|first }}</small>
+                                </div>
+                            </div>
+
+                            {% if "--- RADICACIÓN DE CANCELACIÓN ---" in plan.comentarios_tecnico %}
+                            <!-- 2. Radicación por el Gestor/Técnico -->
+                            <div class="alert alert-dark border-dark py-2 px-2 mb-2 text-white">
+                                <small><strong><i class="bi bi-file-earmark-check"></i> 2. Radicación por el Gestor/Técnico</strong></small>
+                            </div>
+
+                            <div class="alert alert-light border py-2 px-2 mb-0">
+                                <small class="text-muted"><strong>Información de radicación:</strong></small>
+                                <div class="mt-2" style="white-space: pre-line;">
+                                    <small>{{ plan.comentarios_tecnico|split:"--- RADICACIÓN DE CANCELACIÓN ---"|last }}</small>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </details>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- No Recibido - Vencimiento del Plazo (FIN DEL PROCESO) -->
+            {% if plan and plan.estado == 'NO_RECIBIDO' %}
+            <div class="timeline-item completed">
+                <div class="timeline-marker">
+                    <i class="bi bi-clock-history text-secondary"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h6 class="mb-0">
+                            <span class="badge bg-secondary me-2">FIN</span>
+                            <strong>Plan No Recibido</strong>
+                        </h6>
+                    </div>
+
+                    <div class="alert alert-secondary py-2 px-2 mb-0">
+                        <small><strong><i class="bi bi-clock-history"></i> Proceso finalizado por vencimiento</strong></small>
+                        <p class="mb-1 mt-1 small">Plan no enviado dentro del plazo ({{ evaluacion.fecha_limite_plan|date:"d/m/Y" }}).</p>
+
+                        {% if plan.comentarios_tecnico %}
+                        <details class="mt-2">
+                            <summary style="cursor:pointer;"><small><i class="bi bi-info-circle"></i> Ver información completa</small></summary>
+                            <div class="p-2 bg-light rounded mt-1">
+                                <small>{{ plan.comentarios_tecnico|linebreaks }}</small>
+                            </div>
+                        </details>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Etapa 5: Cuenta regresiva para recepción del plan -->
+            {% if evaluacion.fecha_cambio_estado_flujo and evaluacion.estado_flujo_evaluacion == 'FLUJO_NORMAL' and not plan %}
+                {% if dias_sin_plan < 30 %}
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <i class="bi bi-hourglass-split text-{% if dias_sin_plan >= 25 %}danger{% elif dias_sin_plan >= 20 %}warning{% else %}info{% endif %}"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0">
+                                <span class="badge bg-{% if dias_sin_plan >= 25 %}danger{% elif dias_sin_plan >= 20 %}warning text-dark{% else %}info{% endif %} me-2">5</span>
+                                <strong>Esperando carga del Plan de Mejoramiento</strong>
+                            </h6>
+                        </div>
+                        <div class="alert alert-{% if dias_sin_plan >= 25 %}danger{% elif dias_sin_plan >= 20 %}warning{% else %}info{% endif %}">
+                            <h6 class="alert-heading">
+                                <i class="bi bi-hourglass-split"></i> Plazo para recepción del Plan de Mejoramiento
+                            </h6>
+                            <hr>
+                            <p class="mb-3">El proveedor tiene 30 días calendario desde la notificación para cargar su plan de mejoramiento.</p>
+
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="text-center p-3 border rounded bg-light">
+                                        <small class="text-muted d-block mb-2">Días transcurridos</small>
+                                        <h3 class="mb-0 {% if dias_sin_plan >= 25 %}text-danger{% elif dias_sin_plan >= 20 %}text-warning{% else %}text-success{% endif %}">
+                                            {{ dias_sin_plan }}
+                                        </h3>
+                                        <small class="text-muted">días</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center p-3 border rounded bg-light">
+                                        <small class="text-muted d-block mb-2">Días restantes</small>
+                                        <h3 class="mb-0 {% if dias_restantes <= 5 %}text-danger{% elif dias_restantes <= 10 %}text-warning{% else %}text-success{% endif %}">
+                                            {{ dias_restantes }}
+                                        </h3>
+                                        <small class="text-muted">días</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center p-3 border rounded bg-light">
+                                        <small class="text-muted d-block mb-2">Límite</small>
+                                        <h3 class="mb-0 text-primary">30</h3>
+                                        <small class="text-muted">días calendario</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Barra de progreso -->
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <small class="text-muted">Progreso del plazo</small>
+                                    <small class="text-muted"><strong>{{ porcentaje_transcurrido }}%</strong></small>
+                                </div>
+                                <div class="progress" style="height: 30px;">
+                                    <div class="progress-bar {% if porcentaje_transcurrido >= 83 %}bg-danger{% elif porcentaje_transcurrido >= 67 %}bg-warning{% else %}bg-success{% endif %}"
+                                         role="progressbar"
+                                         style="width: {{ porcentaje_transcurrido }}%;"
+                                         aria-valuenow="{{ dias_sin_plan }}"
+                                         aria-valuemin="0"
+                                         aria-valuemax="30">
+                                        <strong>{{ dias_sin_plan }}/30 días</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if dias_sin_plan >= 25 %}
+                            <div class="alert alert-danger mt-3 mb-0">
+                                <i class="bi bi-exclamation-triangle-fill"></i> <strong>¡Atención!</strong> Quedan menos de 5 días para el vencimiento del plazo. Si no se recibe el plan, el sistema cambiará automáticamente el estado a "No recibido".
+                            </div>
+                            {% elif dias_sin_plan >= 20 %}
+                            <div class="alert alert-warning mt-3 mb-0">
+                                <i class="bi bi-exclamation-triangle"></i> <strong>Advertencia:</strong> Quedan {{ dias_restantes }} días para el vencimiento del plazo.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+
+            <!-- Etapa 6: No recibido (Automático) -->
+            {% if evaluacion.fecha_cambio_estado_flujo and evaluacion.estado_flujo_evaluacion == 'FLUJO_NORMAL' and not plan %}
+                {% if dias_sin_plan >= 30 %}
+                <div class="timeline-item completed">
+                    <div class="timeline-marker">
+                        <i class="bi bi-x-circle-fill text-danger"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <h6 class="mb-0">
+                                <span class="badge bg-danger me-2">6</span>
+                                <strong>No recibido (Automático)</strong>
+                            </h6>
+                            {% if evaluacion.fecha_cambio_estado_flujo %}
+                            <small class="text-muted">{{ evaluacion.fecha_cambio_estado_flujo|date:"d/m/Y" }} + 30 días</small>
+                            {% endif %}
+                        </div>
+                        <p class="text-muted mb-2 small">
+                            El plazo de 30 días ha vencido sin recibir el plan de mejoramiento.
+                        </p>
+
+                        <div class="alert alert-light border py-2 px-2 mb-2">
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <small class="text-muted">Acción:</small><br>
+                                    <small><strong>Han pasado 30 días desde el envío de la carta sin recibir plan</strong></small>
+                                </div>
+                                <div class="col-md-4">
+                                    <small class="text-muted">Estado generado:</small><br>
+                                    <span class="badge bg-danger"><small>No recibido</small></span>
+                                </div>
+                                <div class="col-md-4">
+                                    <small class="text-muted">Responsable:</small><br>
+                                    <small><strong>Automático</strong></small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-danger py-2 px-2 mb-2">
+                            <small><strong><i class="bi bi-exclamation-triangle-fill"></i> Efecto:</strong></small><br>
+                            <small>El proveedor queda registrado como incumplido y el flujo se cierra.</small>
+                            <div class="mt-2">
+                                <small class="text-muted">Días transcurridos:</small>
+                                <strong class="text-danger ms-2">{{ dias_sin_plan }} días</strong>
+                            </div>
+                        </div>
+
+                        <!-- Resumen del Paso 6 -->
+                        <div class="alert alert-secondary py-2 px-2 mb-2">
+                            <small><strong><i class="bi bi-info-circle"></i> Resumen - Paso 6: No Recibido (Automático)</strong></small>
+                            <hr class="my-2">
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <small class="text-muted d-block mb-1">📅 <strong>Fecha de notificación:</strong></small>
+                                    <small>{{ evaluacion.fecha_cambio_estado_flujo|date:"d/m/Y" }}</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted d-block mb-1">⏱️ <strong>Plazo límite:</strong></small>
+                                    <small>30 días calendario</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted d-block mb-1">📊 <strong>Días transcurridos:</strong></small>
+                                    <small><strong class="text-danger">{{ dias_sin_plan }} días</strong> ({{ dias_sin_plan|add:"-30" }} días de retraso)</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted d-block mb-1">⚠️ <strong>Estado del flujo:</strong></small>
+                                    <span class="badge bg-danger"><small>Cerrado - Incumplimiento</small></span>
+                                </div>
+                            </div>
+                            <hr class="my-2">
+                            <small class="text-muted">
+                                <i class="bi bi-arrow-right-circle"></i>
+                                <strong>Consecuencia:</strong> El proveedor no presentó el plan de mejoramiento dentro del plazo establecido.
+                                Queda registrado en el sistema como proveedor incumplido para efectos de futuras evaluaciones.
+                            </small>
+                        </div>
+
+                        {% if es_tecnico or es_gestor %}
+                        <div class="alert alert-warning py-2 px-2 mb-0">
+                            <small><strong>Acción del Gestor:</strong> Marcar formalmente como "No Recibido" para cerrar el flujo.</small>
+
+                            <form method="post" class="mt-2">
+                                {% csrf_token %}
+                                <input type="hidden" name="marcar_no_recibido" value="1">
+
+                                <div class="mb-2">
+                                    <label class="form-label mb-1"><small><strong>Observaciones (opcional):</strong></small></label>
+                                    <textarea name="observaciones_no_recibido" class="form-control form-control-sm" rows="2"
+                                              placeholder="Observaciones sobre el cierre del proceso..."></textarea>
+                                </div>
+
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Confirmar que el plan NO fue recibido y cerrar el flujo?')">
+                                    <i class="bi bi-x-circle"></i> Confirmar No Recibido
+                                </button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-dark py-2 px-2 mb-0">
+                            <small><i class="bi bi-x-circle"></i> <strong>FIN DEL FLUJO</strong></small>
+                        </div>
+                        {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Aprobaciones Requeridas -->
+{% if evaluacion.requiere_aprobacion_sst or evaluacion.requiere_aprobacion_ambiental %}
+<div class="card mb-4">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Aprobaciones Requeridas</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            {% if evaluacion.requiere_aprobacion_sst %}
+            <div class="col-md-6">
+                <div class="card border-warning h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-shield-exclamation text-warning" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">Seguridad y Salud en el Trabajo</h5>
+                        <p class="text-muted mb-0">Requiere aprobación del área de SST</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% if evaluacion.requiere_aprobacion_ambiental %}
+            <div class="col-md-6">
+                <div class="card border-warning h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-tree text-warning" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">Gestión Ambiental y Social</h5>
+                        <p class="text-muted mb-0">Requiere aprobación del área ambiental</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal para Abandonar Proceso -->
+<div class="modal fade" id="modalAbandonarProceso" tabindex="-1" aria-labelledby="modalAbandonarProcesoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalAbandonarProcesoLabel">
+                    <i class="bi bi-exclamation-triangle-fill"></i> No Presentar Plan de Mejoramiento
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" id="formAbandonarProceso">
+                {% csrf_token %}
+                <input type="hidden" name="abandonar_proceso" value="1">
+
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <h6 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> ¿Está seguro que desea abandonar el proceso?</h6>
+                        <hr>
+                        <p class="mb-0">Esta acción indica que <strong>NO presentará</strong> el plan de mejoramiento solicitado. <strong>Esta decisión es definitiva y no se puede revertir.</strong></p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="motivoAbandono" class="form-label"><strong>Motivo por el cual no presentará el plan (obligatorio):</strong></label>
+                        <textarea class="form-control"
+                                  id="motivoAbandono"
+                                  name="motivo_abandono"
+                                  rows="4"
+                                  required
+                                  placeholder="Por favor, explique brevemente el motivo por el cual no presentará el plan de mejoramiento..."></textarea>
+                        <div class="form-text">
+                            <i class="bi bi-info-circle"></i> Este motivo quedará registrado en el sistema.
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6><i class="bi bi-info-circle-fill"></i> Consecuencias:</h6>
+                        <ul class="mb-0">
+                            <li>El proceso se cerrará inmediatamente</li>
+                            <li>Quedará registrado como <strong>"Proceso Rechazado por el Proveedor"</strong></li>
+                            <li>El técnico/gestor deberá radicar la cancelación</li>
+                            <li>Esta información quedará en su historial de evaluaciones</li>
+                        </ul>
+                    </div>
+
+                    <div class="form-check mt-3">
+                        <input class="form-check-input" type="checkbox" id="confirmarAbandono" required>
+                        <label class="form-check-label" for="confirmarAbandono">
+                            <strong>Confirmo que he leído y entiendo las consecuencias de esta acción</strong>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-danger" id="btnConfirmarAbandono" disabled>
+                        <i class="bi bi-exclamation-triangle"></i> Confirmar - No Presentaré Plan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Habilitar botón de confirmar solo si se marca el checkbox
+document.getElementById('confirmarAbandono')?.addEventListener('change', function() {
+    document.getElementById('btnConfirmarAbandono').disabled = !this.checked;
+});
+
+// Confirmación adicional al enviar
+document.getElementById('formAbandonarProceso')?.addEventListener('submit', function(e) {
+    if (!confirm('⚠️ ÚLTIMA CONFIRMACIÓN\n\n¿Está completamente seguro que NO presentará el plan de mejoramiento?\n\nEsta acción NO se puede revertir.')) {
+        e.preventDefault();
+    }
+});
+</script>
+
+<div class="mt-4 mb-4">
+    {% if es_proveedor %}
+    <a href="{% url 'proveedor_dashboard' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Volver al Dashboard
+    </a>
+    {% else %}
+    <a href="{% url 'tecnico_panel' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Volver al Panel
+    </a>
+    {% endif %}
+</div>
+{% endblock %}

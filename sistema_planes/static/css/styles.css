@@ -1,0 +1,414 @@
+/* 
+ * Sistema de Planes de Mejoramiento - INTERCOLOMBIA/ISA
+ * Estilos personalizados según estándares corporativos
+ */
+
+:root {
+    /* Colores principales ITCO-ISA */
+    --color-primario: #003366;        /* Azul oscuro corporativo */
+    --color-secundario: #0066CC;      /* Azul medio */
+    --color-acento: #66B2FF;          /* Azul claro */
+    --color-exito: #28a745;           /* Verde */
+    --color-advertencia: #FFA500;     /* Naranja */
+    --color-peligro: #dc3545;         /* Rojo */
+    --color-info: #17a2b8;            /* Azul info */
+    
+    /* Escala de grises */
+    --color-texto-principal: #333333;
+    --color-texto-secundario: #666666;
+    --color-borde: #dee2e6;
+    --color-fondo: #f8f9fa;
+    --color-fondo-blanco: #ffffff;
+    
+    /* Colores para estados de plan */
+    --estado-borrador: #6c757d;
+    --estado-enviado: #0066CC;
+    --estado-firmado: #003366;
+    --estado-revision: #17a2b8;
+    --estado-esperando: #FFA500;
+    --estado-ajustes: #fd7e14;
+    --estado-reevaluados: #6f42c1;
+    --estado-aprobado: #28a745;
+    --estado-rechazado: #dc3545;
+    
+    /* Colores para puntajes de evaluación */
+    --puntaje-excelente: #28a745;     /* >= 90 */
+    --puntaje-bueno: #66B2FF;         /* >= 80 */
+    --puntaje-regular: #FFA500;       /* >= 60 */
+    --puntaje-critico: #dc3545;       /* < 60 */
+}
+
+/* Estilos generales */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--color-texto-principal);
+    background-color: var(--color-fondo);
+}
+
+/* Header corporativo */
+.navbar-brand {
+    font-weight: 600;
+    color: var(--color-primario) !important;
+}
+
+.navbar-dark {
+    background-color: var(--color-primario) !important;
+}
+
+.navbar-dark .navbar-nav .nav-link {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.navbar-dark .navbar-nav .nav-link:hover {
+    color: var(--color-acento) !important;
+}
+
+/* Botones personalizados */
+.btn-primary {
+    background-color: var(--color-primario);
+    border-color: var(--color-primario);
+}
+
+.btn-primary:hover {
+    background-color: var(--color-secundario);
+    border-color: var(--color-secundario);
+}
+
+.btn-secondary {
+    background-color: var(--color-texto-secundario);
+    border-color: var(--color-texto-secundario);
+}
+
+/* Cards y paneles */
+.card {
+    border: 1px solid var(--color-borde);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background-color: var(--color-primario);
+    color: white;
+    font-weight: 600;
+}
+
+.card-header h5 {
+    margin: 0;
+    color: white;
+}
+
+/* Tablas */
+.table thead th {
+    background-color: var(--color-primario);
+    color: white;
+    border-color: var(--color-primario);
+    font-weight: 600;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(0, 51, 102, 0.05);
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(102, 178, 255, 0.1);
+}
+
+/* Badges de estado */
+.badge-estado {
+    padding: 0.35em 0.65em;
+    font-size: 0.875em;
+    font-weight: 600;
+    border-radius: 0.25rem;
+}
+
+.badge-estado-borrador {
+    background-color: var(--estado-borrador);
+    color: white;
+}
+
+.badge-estado-enviado {
+    background-color: var(--estado-enviado);
+    color: white;
+}
+
+.badge-estado-firmado-enviado {
+    background-color: var(--estado-firmado);
+    color: white;
+}
+
+.badge-estado-en-revision {
+    background-color: var(--estado-revision);
+    color: white;
+}
+
+.badge-estado-esperando-aprobacion {
+    background-color: var(--estado-esperando);
+    color: white;
+}
+
+.badge-estado-solicitud-ajustes,
+.badge-estado-requiere-ajustes {
+    background-color: var(--estado-ajustes);
+    color: white;
+}
+
+.badge-estado-documentos-reevaluados {
+    background-color: var(--estado-reevaluados);
+    color: white;
+}
+
+.badge-estado-aprobado {
+    background-color: var(--estado-aprobado);
+    color: white;
+}
+
+.badge-estado-rechazado {
+    background-color: var(--estado-rechazado);
+    color: white;
+}
+
+/* Badge púrpura para aclaración */
+.bg-purple {
+    background-color: #6f42c1 !important;
+    color: white !important;
+}
+
+.text-purple {
+    color: #6f42c1 !important;
+}
+
+/* Indicadores de puntaje */
+.puntaje-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.puntaje-excelente {
+    background-color: var(--puntaje-excelente);
+    color: white;
+}
+
+.puntaje-bueno {
+    background-color: var(--puntaje-bueno);
+    color: white;
+}
+
+.puntaje-regular {
+    background-color: var(--puntaje-regular);
+    color: white;
+}
+
+.puntaje-critico {
+    background-color: var(--puntaje-critico);
+    color: white;
+}
+
+/* Alertas personalizadas */
+.alert-info {
+    background-color: rgba(0, 102, 204, 0.1);
+    border-color: var(--color-secundario);
+    color: var(--color-primario);
+}
+
+.alert-warning {
+    background-color: rgba(255, 165, 0, 0.1);
+    border-color: var(--color-advertencia);
+    color: #856404;
+}
+
+/* Dashboard stats */
+.stat-card {
+    border-left: 4px solid var(--color-primario);
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--color-primario);
+}
+
+.stat-card .stat-label {
+    color: var(--color-texto-secundario);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Formularios */
+.form-control:focus {
+    border-color: var(--color-secundario);
+    box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.25);
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--color-texto-principal);
+}
+
+/* Timeline para historial y progreso */
+.timeline {
+    position: relative;
+    padding-left: 50px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 18px;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--color-borde);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 30px;
+    padding-bottom: 10px;
+}
+
+.timeline-item .timeline-marker {
+    position: absolute;
+    left: -44px;
+    top: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border-radius: 50%;
+    z-index: 2;
+}
+
+.timeline-item .timeline-marker i {
+    font-size: 24px;
+}
+
+.timeline-item .timeline-content {
+    padding: 10px 0;
+}
+
+.timeline-item.completed .timeline-marker {
+    background: #d4edda;
+}
+
+.timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Estilos antiguos para compatibilidad */
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -24px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--color-primario);
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px var(--color-borde);
+    display: none; /* Oculto cuando se usa timeline-marker */
+}
+
+/* Progress bars */
+.progress {
+    height: 25px;
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    background-color: var(--color-primario);
+    font-weight: 600;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .stat-card .stat-value {
+        font-size: 1.5rem;
+    }
+    
+    .card-header {
+        padding: 0.75rem;
+    }
+    
+    .table {
+        font-size: 0.9rem;
+    }
+}
+
+/* Print styles */
+@media print {
+    .navbar, .btn, .form-control {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #000;
+        page-break-inside: avoid;
+    }
+    
+    .table {
+        border: 1px solid #000;
+    }
+    
+    .table th, .table td {
+        border: 1px solid #000 !important;
+    }
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Tooltips personalizados */
+.tooltip-inner {
+    background-color: var(--color-primario);
+}
+
+.bs-tooltip-top .arrow::before {
+    border-top-color: var(--color-primario);
+}
+
+/* Loading spinner */
+.spinner-border-custom {
+    color: var(--color-primario);
+}
+
+/* Footer */
+footer {
+    background-color: var(--color-primario);
+    color: white;
+    padding: 2rem 0;
+    margin-top: 3rem;
+}
+
+footer a {
+    color: var(--color-acento);
+}
+
+footer a:hover {
+    color: white;
+    text-decoration: none;
+}

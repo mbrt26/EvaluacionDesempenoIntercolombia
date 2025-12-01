@@ -1,0 +1,319 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard Gestor de Compras - Sistema de Planes de Mejoramiento{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        border-left: 4px solid;
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .stat-card.blue { border-left-color: #3498db; }
+    .stat-card.green { border-left-color: #27ae60; }
+    .stat-card.orange { border-left-color: #f39c12; }
+    .stat-card.red { border-left-color: #e74c3c; }
+    .stat-card.purple { border-left-color: #9b59b6; }
+    .stat-card.teal { border-left-color: #1abc9c; }
+    .stat-card.yellow { border-left-color: #f1c40f; }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+
+    .stat-label {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .readonly-badge {
+        background-color: #95a5a6;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col">
+        <h1><i class="bi bi-graph-up"></i> Dashboard de Estadísticas</h1>
+        <p class="text-muted">
+            Sistema de Evaluación de Desempeño y Planes de Mejoramiento
+            <span class="readonly-badge"><i class="bi bi-eye"></i> Solo Lectura</span>
+        </p>
+    </div>
+</div>
+
+<!-- Estadísticas Generales -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card blue">
+            <div class="card-body text-center">
+                <div class="stat-number text-primary">{{ estadisticas.total_proveedores }}</div>
+                <div class="stat-label">Proveedores Totales</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card green">
+            <div class="card-body text-center">
+                <div class="stat-number text-success">{{ estadisticas.total_evaluaciones }}</div>
+                <div class="stat-label">Evaluaciones Realizadas</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card purple">
+            <div class="card-body text-center">
+                <div class="stat-number text-info">{{ estadisticas.total_planes }}</div>
+                <div class="stat-label">Planes de Mejoramiento</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card orange">
+            <div class="card-body text-center">
+                <div class="stat-number {% if estadisticas.promedio_puntaje >= 80 %}text-success{% elif estadisticas.promedio_puntaje >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                    {{ estadisticas.promedio_puntaje }}
+                </div>
+                <div class="stat-label">Promedio General</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resumen de Evaluaciones -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-clipboard-data"></i> Resumen de Evaluaciones por Categoría</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <div class="card stat-card green mb-0">
+                            <div class="card-body">
+                                <div class="stat-number text-success">{{ estadisticas.evaluaciones_satisfactorias }}</div>
+                                <div class="stat-label">Satisfactorias</div>
+                                <small class="text-muted">(Puntaje ≥ 80)</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card stat-card yellow mb-0">
+                            <div class="card-body">
+                                <div class="stat-number text-warning">{{ estadisticas.evaluaciones_aceptables }}</div>
+                                <div class="stat-label">Aceptables</div>
+                                <small class="text-muted">(Puntaje 60-79)</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card stat-card red mb-0">
+                            <div class="card-body">
+                                <div class="stat-number text-danger">{{ estadisticas.evaluaciones_criticas }}</div>
+                                <div class="stat-label">Críticas</div>
+                                <small class="text-muted">(Puntaje &lt; 60)</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estado de Planes de Mejoramiento -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> Estado de Planes de Mejoramiento</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-2">
+                        <div class="mb-2">
+                            <span class="badge bg-secondary fs-4">{{ estadisticas.planes_borrador }}</span>
+                        </div>
+                        <small class="text-muted">Borrador</small>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="mb-2">
+                            <span class="badge bg-info fs-4">{{ estadisticas.planes_enviados }}</span>
+                        </div>
+                        <small class="text-muted">Enviados</small>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="mb-2">
+                            <span class="badge bg-warning fs-4">{{ estadisticas.planes_revision }}</span>
+                        </div>
+                        <small class="text-muted">En Revisión</small>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="mb-2">
+                            <span class="badge bg-danger fs-4">{{ estadisticas.planes_requiere_ajustes }}</span>
+                        </div>
+                        <small class="text-muted">Requiere Ajustes</small>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="mb-2">
+                            <span class="badge bg-success fs-4">{{ estadisticas.planes_aprobados }}</span>
+                        </div>
+                        <small class="text-muted">Aprobados</small>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="mb-2">
+                            <span class="badge bg-dark fs-4">{{ estadisticas.planes_rechazados }}</span>
+                        </div>
+                        <small class="text-muted">Rechazados</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Evaluaciones Recientes -->
+<div class="card mb-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0">
+            <i class="bi bi-clock-history"></i> Evaluaciones Recientes
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Proveedor</th>
+                        <th>NIT</th>
+                        <th>Fecha</th>
+                        <th>N° Contrato</th>
+                        <th class="text-center">Puntaje</th>
+                        <th class="text-center">Estado</th>
+                        <th>Técnico Asignado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for evaluacion in evaluaciones_recientes %}
+                    <tr>
+                        <td><strong>{{ evaluacion.proveedor.razon_social }}</strong></td>
+                        <td>{{ evaluacion.proveedor.nit }}</td>
+                        <td>{{ evaluacion.fecha|date:"d/m/Y" }}</td>
+                        <td>{{ evaluacion.numero_contrato|default:"—" }}</td>
+                        <td class="text-center">
+                            <span class="badge {% if evaluacion.puntaje >= 80 %}bg-success{% elif evaluacion.puntaje >= 60 %}bg-warning text-dark{% else %}bg-danger{% endif %}" style="font-size: 1rem; padding: 0.4rem 0.8rem;">
+                                {{ evaluacion.puntaje }}/100
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <small>{{ evaluacion.estado_evaluacion }}</small>
+                        </td>
+                        <td>
+                            {% if evaluacion.tecnico_asignado %}
+                                {{ evaluacion.tecnico_asignado.get_full_name|default:evaluacion.tecnico_asignado.username }}
+                            {% else %}
+                                <span class="text-muted">Sin asignar</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <div style="font-size: 48px;">📭</div>
+                            <p class="text-muted">No hay evaluaciones registradas</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Planes Recientes -->
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">
+            <i class="bi bi-clipboard-check"></i> Planes de Mejoramiento Recientes
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Proveedor</th>
+                        <th>NIT</th>
+                        <th>Evaluación</th>
+                        <th>Fecha Creación</th>
+                        <th class="text-center">Estado</th>
+                        <th class="text-center">Fecha Límite</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for plan in planes_recientes %}
+                    <tr>
+                        <td><strong>{{ plan.proveedor.razon_social }}</strong></td>
+                        <td>{{ plan.proveedor.nit }}</td>
+                        <td>{{ plan.evaluacion.fecha|date:"d/m/Y" }} - {{ plan.evaluacion.puntaje }}/100</td>
+                        <td>{{ plan.fecha_creacion|date:"d/m/Y" }}</td>
+                        <td class="text-center">
+                            {% if plan.estado == 'APROBADO' %}
+                                <span class="badge bg-success">✓ APROBADO</span>
+                            {% elif plan.estado == 'RECHAZADO' %}
+                                <span class="badge bg-dark">✗ RECHAZADO</span>
+                            {% elif plan.estado == 'ENVIADO' %}
+                                <span class="badge bg-info">→ ENVIADO</span>
+                            {% elif plan.estado == 'EN_REVISION' %}
+                                <span class="badge bg-warning">⚙ EN REVISIÓN</span>
+                            {% elif plan.estado == 'REQUIERE_AJUSTES' %}
+                                <span class="badge bg-danger">! AJUSTES</span>
+                            {% elif plan.estado == 'BORRADOR' %}
+                                <span class="badge bg-secondary">📝 BORRADOR</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ plan.get_estado_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if plan.fecha_limite %}
+                                <span class="{% if plan.esta_vencido %}text-danger fw-bold{% endif %}">
+                                    {{ plan.fecha_limite|date:"d/m/Y" }}
+                                </span>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div style="font-size: 48px;">📋</div>
+                            <p class="text-muted">No hay planes de mejoramiento registrados</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Nota informativa -->
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> <strong>Nota:</strong> Este dashboard es de solo lectura. Si necesita realizar cambios o gestionar evaluaciones y planes, contacte al Gestor de Planes de Mejoramiento o al personal técnico correspondiente.
+</div>
+
+{% endblock %}

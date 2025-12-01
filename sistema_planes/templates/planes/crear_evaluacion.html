@@ -1,0 +1,319 @@
+{% extends 'base.html' %}
+
+{% block title %}Crear Evaluación - Sistema de Planes de Mejoramiento{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="bi bi-clipboard-check"></i> Crear Nueva Evaluación
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="formEvaluacion">
+                        {% csrf_token %}
+                        
+                        <!-- Información General -->
+                        <h5 class="mb-3">Información General</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="proveedor" class="form-label">Proveedor *</label>
+                                    <select class="form-control" id="proveedor" name="proveedor" required>
+                                        <option value="">-- Seleccione un proveedor --</option>
+                                        {% for proveedor in proveedores %}
+                                        <option value="{{ proveedor.id }}" 
+                                            {% if proveedor_seleccionado and proveedor_seleccionado.id == proveedor.id %}selected{% endif %}>
+                                            {{ proveedor.nit }} - {{ proveedor.razon_social }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="periodo" class="form-label">Período *</label>
+                                    <select class="form-control" id="periodo" name="periodo" required>
+                                        <option value="">-- Seleccione --</option>
+                                        {% for periodo in periodos %}
+                                        <option value="{{ periodo }}">{{ periodo }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="fecha" class="form-label">Fecha de Evaluación *</label>
+                                    <input type="date" class="form-control" id="fecha" name="fecha" 
+                                           value="{{ fecha_hoy }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="numero_contrato" class="form-label">N° Contrato/Orden</label>
+                                    <input type="text" class="form-control" id="numero_contrato" name="numero_contrato" 
+                                           placeholder="Ej: 4600005089">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="subcategoria" class="form-label">Subcategoría</label>
+                                    <input type="text" class="form-control" id="subcategoria" name="subcategoria" 
+                                           placeholder="Ej: SUMINISTROS">
+                                </div>
+                            </div>
+
+                            <div class="col-md-2">
+                                <div class="mb-3">
+                                    <label for="fecha_limite_aclaracion" class="form-label">Fecha Límite Aclaración</label>
+                                    <input type="date" class="form-control" id="fecha_limite_aclaracion" name="fecha_limite_aclaracion">
+                                </div>
+                            </div>
+
+                            <div class="col-md-2">
+                                <div class="mb-3">
+                                    <label for="fecha_limite_plan" class="form-label">Fecha Límite Plan</label>
+                                    <input type="date" class="form-control" id="fecha_limite_plan" name="fecha_limite_plan">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <!-- Criterios de Evaluación -->
+                        <h5 class="mb-3">Criterios de Evaluación</h5>
+                        <p class="text-muted">Cada criterio se evalúa según su peso específico. Total máximo: 100 puntos</p>
+                        
+                        <div class="row">
+                            <div class="col-md-12">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Criterio</th>
+                                            <th width="150">Puntaje</th>
+                                            <th width="150">Máximo</th>
+                                            <th>Observaciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <strong><i class="bi bi-briefcase"></i> Gestión</strong>
+                                                <br><small class="text-muted">Gestión administrativa y documental</small>
+                                            </td>
+                                            <td>
+                                                <input type="number" class="form-control puntaje-input" 
+                                                       name="puntaje_gestion" min="0" max="25" value="0" required>
+                                            </td>
+                                            <td>
+                                                <input type="number" class="form-control" name="max_gestion" value="25" readonly>
+                                            </td>
+                                            <td>
+                                                <textarea class="form-control" name="observaciones_gestion" rows="2"></textarea>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <strong><i class="bi bi-star"></i> Calidad</strong>
+                                                <br><small class="text-muted">Calidad del producto/servicio</small>
+                                            </td>
+                                            <td>
+                                                <input type="number" class="form-control puntaje-input" 
+                                                       name="puntaje_calidad" min="0" max="25" value="0" required>
+                                            </td>
+                                            <td>
+                                                <input type="number" class="form-control" name="max_calidad" value="25" readonly>
+                                            </td>
+                                            <td>
+                                                <textarea class="form-control" name="observaciones_calidad" rows="2"></textarea>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <strong><i class="bi bi-clock"></i> Oportunidad</strong>
+                                                <br><small class="text-muted">Cumplimiento de tiempos y plazos</small>
+                                            </td>
+                                            <td>
+                                                <input type="number" class="form-control puntaje-input" 
+                                                       name="puntaje_oportunidad" min="0" max="25" value="0" required>
+                                            </td>
+                                            <td>
+                                                <input type="number" class="form-control" name="max_oportunidad" value="25" readonly>
+                                            </td>
+                                            <td>
+                                                <textarea class="form-control" name="observaciones_oportunidad" rows="2"></textarea>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <strong><i class="bi bi-tree"></i> Ambiental y Social</strong>
+                                                <br><small class="text-muted">Cumplimiento ambiental y responsabilidad social</small>
+                                            </td>
+                                            <td>
+                                                <input type="number" class="form-control puntaje-input" 
+                                                       name="puntaje_ambiental_social" min="0" max="25" value="0" required>
+                                            </td>
+                                            <td>
+                                                <input type="number" class="form-control" name="max_ambiental_social" value="25" readonly>
+                                            </td>
+                                            <td>
+                                                <textarea class="form-control" name="observaciones_ambiental_social" rows="2"></textarea>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <strong><i class="bi bi-shield-check"></i> SST</strong>
+                                                <br><small class="text-muted">Seguridad y Salud en el Trabajo</small>
+                                            </td>
+                                            <td>
+                                                <input type="number" class="form-control puntaje-input" 
+                                                       name="puntaje_sst" min="0" max="25" value="0" required>
+                                            </td>
+                                            <td>
+                                                <input type="number" class="form-control" name="max_sst" value="25" readonly>
+                                            </td>
+                                            <td>
+                                                <textarea class="form-control" name="observaciones_sst" rows="2"></textarea>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="table-primary">
+                                            <td><strong>TOTAL</strong></td>
+                                            <td><strong id="puntajeTotal">0</strong></td>
+                                            <td><strong>100</strong></td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Aprobaciones Especiales -->
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="requiere_aprobacion_sst" 
+                                           name="requiere_aprobacion_sst">
+                                    <label class="form-check-label" for="requiere_aprobacion_sst">
+                                        Requiere aprobación especial de SST
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="requiere_aprobacion_ambiental" 
+                                           name="requiere_aprobacion_ambiental">
+                                    <label class="form-check-label" for="requiere_aprobacion_ambiental">
+                                        Requiere aprobación especial Ambiental
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Observaciones Generales -->
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label for="observaciones" class="form-label">Observaciones Generales</label>
+                                    <textarea class="form-control" id="observaciones" name="observaciones" rows="3"
+                                              placeholder="Observaciones adicionales sobre la evaluación"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Indicador de Puntaje -->
+                        <div class="alert" id="alertaPuntaje" style="display: none;">
+                            <h5 id="mensajePuntaje"></h5>
+                            <p id="descripcionPuntaje"></p>
+                        </div>
+                        
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'panel_tecnico' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-save"></i> Guardar Evaluación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Calcular puntaje total
+        function calcularTotal() {
+            let total = 0;
+            document.querySelectorAll('.puntaje-input').forEach(function(input) {
+                total += parseInt(input.value) || 0;
+            });
+            
+            document.getElementById('puntajeTotal').textContent = total;
+            
+            // Actualizar alerta según puntaje
+            const alerta = document.getElementById('alertaPuntaje');
+            const mensaje = document.getElementById('mensajePuntaje');
+            const descripcion = document.getElementById('descripcionPuntaje');
+            
+            alerta.style.display = 'block';
+            
+            if (total >= 90) {
+                alerta.className = 'alert alert-success';
+                mensaje.textContent = '¡Excelente! (' + total + '/100)';
+                descripcion.textContent = 'El proveedor tiene un desempeño sobresaliente.';
+            } else if (total >= 80) {
+                alerta.className = 'alert alert-info';
+                mensaje.textContent = 'Bueno (' + total + '/100)';
+                descripcion.textContent = 'El proveedor cumple satisfactoriamente. No requiere plan de mejoramiento.';
+            } else if (total >= 60) {
+                alerta.className = 'alert alert-warning';
+                mensaje.textContent = 'Regular (' + total + '/100)';
+                descripcion.textContent = 'El proveedor REQUIERE crear un Plan de Mejoramiento.';
+            } else {
+                alerta.className = 'alert alert-danger';
+                mensaje.textContent = 'Crítico (' + total + '/100)';
+                descripcion.textContent = 'El proveedor REQUIERE URGENTEMENTE un Plan de Mejoramiento.';
+            }
+        }
+        
+        // Escuchar cambios en los inputs de puntaje
+        document.querySelectorAll('.puntaje-input').forEach(function(input) {
+            input.addEventListener('input', calcularTotal);
+        });
+        
+        // Calcular al cargar
+        calcularTotal();
+        
+        // Validar formulario antes de enviar
+        document.getElementById('formEvaluacion').addEventListener('submit', function(e) {
+            const total = parseInt(document.getElementById('puntajeTotal').textContent);
+            if (total > 100) {
+                e.preventDefault();
+                alert('El puntaje total no puede superar 100 puntos. Actualmente: ' + total);
+                return false;
+            }
+            
+            if (total < 80) {
+                if (!confirm('El puntaje es ' + total + '/100. El proveedor deberá crear un Plan de Mejoramiento. ¿Desea continuar?')) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

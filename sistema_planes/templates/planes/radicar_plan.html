@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block title %}Radicar Plan - Plan {{ plan.id }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'gestor_compras_dashboard' %}">Dashboard Gestor Compras</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'planes_pendientes_radicacion' %}">Planes Pendientes</a></li>
+                <li class="breadcrumb-item active">Radicar Plan</li>
+            </ol>
+        </nav>
+        <h2><i class="bi bi-folder-check"></i> Radicar Plan de Mejoramiento</h2>
+        <p class="text-muted">{{ plan.proveedor.razon_social }} - {{ plan.evaluacion.periodo }}</p>
+    </div>
+</div>
+
+<!-- Información del Plan -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Información del Plan</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>Estado Actual:</strong><br>
+                        <span class="badge bg-warning">{{ plan.get_estado_display }}</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Proveedor:</strong><br>
+                        {{ plan.proveedor.razon_social }}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>NIT:</strong><br>
+                        {{ plan.proveedor.nit }}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Evaluación:</strong><br>
+                        {{ plan.evaluacion.periodo }} - {{ plan.evaluacion.puntaje }}/100
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-4">
+                        <strong>Fecha de Revisión:</strong><br>
+                        {{ plan.fecha_revision|date:"d/m/Y H:i" }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Revisado Por:</strong><br>
+                        {{ plan.revisado_por.get_full_name|default:plan.revisado_por.username }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Responsable del Plan:</strong><br>
+                        {{ plan.responsable }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Formulario de Radicación -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-pencil-square"></i> Asignar Número de Radicado</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    Al radicar este plan, se le asignará un número oficial de radicado y cambiará su estado a
+                    <strong>"PM Radicado"</strong>. Este número será usado para el seguimiento del plan.
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="numero_radicado" class="form-label">Número de Radicado *</label>
+                        <input type="text" class="form-control form-control-lg" id="numero_radicado"
+                               name="numero_radicado" required
+                               placeholder="Ejemplo: RAD-2025-001 o PM-2025-10-001">
+                        <div class="form-text">
+                            Ingrese el número de radicado según el formato establecido por su entidad
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="comentario" class="form-label">Comentario</label>
+                        <textarea class="form-control" id="comentario" name="comentario" rows="3"
+                                  placeholder="Agregue un comentario sobre esta radicación (opcional)"></textarea>
+                        <div class="form-text">Opcional: Agregue información adicional sobre la radicación</div>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="bi bi-check-circle"></i> Radicar Plan
+                        </button>
+                        <a href="{% url 'planes_pendientes_radicacion' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <a href="{% url 'ver_plan' plan.id %}" class="btn btn-outline-primary">
+                            <i class="bi bi-eye"></i> Ver Detalles del Plan
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de Ayuda -->
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0"><i class="bi bi-question-circle"></i> ¿Qué es radicar?</h6>
+            </div>
+            <div class="card-body">
+                <p class="small">
+                    Radicar un plan significa asignarle un número oficial de seguimiento en el sistema
+                    de gestión documental de la entidad.
+                </p>
+                <p class="small mb-0">
+                    Este número se usa para todas las comunicaciones oficiales relacionadas con el plan.
+                </p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h6 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Importante</h6>
+            </div>
+            <div class="card-body">
+                <ul class="small mb-0">
+                    <li>Verifique que el número de radicado sea correcto</li>
+                    <li>El número no podrá ser modificado después</li>
+                    <li>El plan cambiará automáticamente a estado "PM Radicado"</li>
+                    <li>Se notificará al proveedor sobre la radicación</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const btnSubmit = form.querySelector('button[type="submit"]');
+
+    form.addEventListener('submit', function(e) {
+        const numeroRadicado = document.getElementById('numero_radicado').value.trim();
+
+        if (!numeroRadicado) {
+            e.preventDefault();
+            alert('Debe ingresar un número de radicado');
+            return false;
+        }
+
+        // Confirmación antes de enviar
+        if (!confirm('¿Está seguro de radicar este plan con el número: ' + numeroRadicado + '?\n\nEsta acción no se puede deshacer.')) {
+            e.preventDefault();
+            return false;
+        }
+
+        // Deshabilitar botón para evitar doble envío
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Radicando...';
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Proveedores - Sistema de Planes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Header */
+        .header {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #7f8c8d;
+        }
+        
+        .nav-bar {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .nav-bar a {
+            color: #3498db;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+        
+        .nav-bar a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Estadísticas */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+            border-left: 4px solid;
+        }
+        
+        .stat-card.blue { border-left-color: #3498db; }
+        .stat-card.red { border-left-color: #e74c3c; }
+        .stat-card.yellow { border-left-color: #f39c12; }
+        .stat-card.green { border-left-color: #27ae60; }
+        
+        .stat-number {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        /* Tabla */
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .table-header {
+            background: #34495e;
+            color: white;
+            padding: 15px 20px;
+            font-size: 18px;
+            font-weight: 500;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            background: #ecf0f1;
+        }
+        
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #bdc3c7;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        /* Badges y estados */
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .badge-puntaje {
+            font-size: 18px;
+            padding: 8px 16px;
+            font-weight: bold;
+            border-radius: 8px;
+        }
+        
+        .puntaje-alto {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .puntaje-medio {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .puntaje-bajo {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .estado-aprobado {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .estado-rechazado {
+            background: #2c3e50;
+            color: white;
+        }
+        
+        .estado-enviado {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .estado-ajustes {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .estado-sin-plan {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .estado-no-requiere {
+            background: #e7e7e7;
+            color: #666;
+        }
+        
+        /* Desglose de puntajes */
+        .criterio {
+            display: inline-block;
+            padding: 2px 6px;
+            margin: 0 2px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            min-width: 35px;
+            text-align: center;
+        }
+        
+        .criterio-alto {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .criterio-medio {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .criterio-bajo {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        /* Botones */
+        .btn {
+            padding: 6px 12px;
+            border: 1px solid;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0 2px;
+            transition: all 0.3s;
+        }
+        
+        .btn-info {
+            color: #0c5460;
+            background: #d1ecf1;
+            border-color: #bee5eb;
+        }
+        
+        .btn-info:hover {
+            background: #b8daff;
+        }
+        
+        .btn-primary {
+            color: white;
+            background: #007bff;
+            border-color: #007bff;
+        }
+        
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+        
+        .btn-success {
+            color: white;
+            background: #28a745;
+            border-color: #28a745;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .btn-secondary {
+            color: white;
+            background: #6c757d;
+            border-color: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        
+        /* Info del proveedor */
+        .proveedor-info {
+            line-height: 1.4;
+        }
+        
+        .proveedor-nombre {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 15px;
+        }
+        
+        .proveedor-detalle {
+            color: #7f8c8d;
+            font-size: 12px;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+        }
+        
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .mt-4 {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navegación -->
+        <div class="nav-bar">
+            <a href="/tecnico/">← Panel Técnico</a>
+            <a href="/logout/">Cerrar Sesión ({{ request.user.username }})</a>
+        </div>
+        
+        <!-- Header -->
+        <div class="header">
+            <h1>📋 Lista de Proveedores y Evaluaciones</h1>
+            <p>Gestión integral de proveedores y planes de mejoramiento</p>
+            <div style="margin-top: 15px;">
+                <a href="/tecnico/evaluacion/crear/" class="btn btn-success">
+                    ➕ Nueva Evaluación
+                </a>
+            </div>
+        </div>
+        
+        <!-- Estadísticas -->
+        <div class="stats-container">
+            <div class="stat-card blue">
+                <div class="stat-number">{{ estadisticas.total }}</div>
+                <div class="stat-label">Total Proveedores</div>
+            </div>
+            <div class="stat-card red">
+                <div class="stat-number">{{ estadisticas.requieren_plan }}</div>
+                <div class="stat-label">Requieren Plan</div>
+            </div>
+            <div class="stat-card yellow">
+                <div class="stat-number">{{ estadisticas.pendientes }}</div>
+                <div class="stat-label">Planes Pendientes</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-number">{{ estadisticas.aprobados }}</div>
+                <div class="stat-label">Planes Aprobados</div>
+            </div>
+        </div>
+        
+        <!-- Tabla de Proveedores -->
+        <div class="table-container">
+            <div class="table-header">
+                📊 Proveedores Evaluados
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Proveedor</th>
+                        <th class="text-center">Período</th>
+                        <th class="text-center">Puntaje</th>
+                        <th class="text-center">Desglose</th>
+                        <th class="text-center">Estado del Plan</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in datos %}
+                    <tr>
+                        <td>
+                            <div class="proveedor-info">
+                                <div class="proveedor-nombre">{{ item.proveedor.razon_social }}</div>
+                                <div class="proveedor-detalle">NIT: {{ item.proveedor.nit }}</div>
+                                <div class="proveedor-detalle">📧 {{ item.proveedor.email }}</div>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge" style="background: #95a5a6; color: white;">
+                                {{ item.evaluacion.periodo }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge-puntaje {% if item.color_puntaje == 'verde' %}puntaje-alto{% elif item.color_puntaje == 'amarillo' %}puntaje-medio{% else %}puntaje-bajo{% endif %}">
+                                {{ item.evaluacion.puntaje }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <span class="criterio {% if item.evaluacion.puntaje_calidad >= 20 %}criterio-alto{% elif item.evaluacion.puntaje_calidad >= 15 %}criterio-medio{% else %}criterio-bajo{% endif %}">
+                                C:{{ item.evaluacion.puntaje_calidad }}
+                            </span>
+                            <span class="criterio {% if item.evaluacion.puntaje_entrega >= 20 %}criterio-alto{% elif item.evaluacion.puntaje_entrega >= 15 %}criterio-medio{% else %}criterio-bajo{% endif %}">
+                                E:{{ item.evaluacion.puntaje_entrega }}
+                            </span>
+                            <span class="criterio {% if item.evaluacion.puntaje_documentacion >= 20 %}criterio-alto{% elif item.evaluacion.puntaje_documentacion >= 15 %}criterio-medio{% else %}criterio-bajo{% endif %}">
+                                D:{{ item.evaluacion.puntaje_documentacion }}
+                            </span>
+                            <span class="criterio {% if item.evaluacion.puntaje_precio >= 20 %}criterio-alto{% elif item.evaluacion.puntaje_precio >= 15 %}criterio-medio{% else %}criterio-bajo{% endif %}">
+                                P:{{ item.evaluacion.puntaje_precio }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            {% if item.plan %}
+                                {% if item.plan.estado == 'APROBADO' %}
+                                    <span class="badge estado-aprobado">
+                                        ✓ APROBADO
+                                    </span>
+                                {% elif item.plan.estado == 'RECHAZADO' %}
+                                    <span class="badge estado-rechazado">
+                                        ✗ RECHAZADO
+                                    </span>
+                                {% elif item.plan.estado == 'ENVIADO' %}
+                                    <span class="badge estado-enviado">
+                                        → ENVIADO
+                                    </span>
+                                {% elif item.plan.estado == 'REQUIERE_AJUSTES' %}
+                                    <span class="badge estado-ajustes">
+                                        ! REQUIERE AJUSTES
+                                    </span>
+                                {% else %}
+                                    <span class="badge" style="background: #ffc107; color: #333;">
+                                        {{ item.plan.get_estado_display }}
+                                    </span>
+                                {% endif %}
+                                {% if item.plan.fecha_envio %}
+                                <div style="font-size: 11px; color: #999; margin-top: 4px;">
+                                    {{ item.plan.fecha_envio|date:"d/m/Y" }}
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                {% if item.requiere_plan %}
+                                    <span class="badge estado-sin-plan">
+                                        ⚠ SIN PLAN
+                                    </span>
+                                    <div style="font-size: 11px; color: #e74c3c; margin-top: 4px;">
+                                        Requerido
+                                    </div>
+                                {% else %}
+                                    <span class="badge estado-no-requiere">
+                                        — NO REQUIERE
+                                    </span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group">
+                                <a href="#" class="btn btn-info" title="Ver detalles">
+                                    👁 Ver
+                                </a>
+                                {% if item.plan %}
+                                    {% if item.plan.estado == 'ENVIADO' %}
+                                        <a href="/tecnico/revisar/{{ item.plan.id }}/" class="btn btn-primary" title="Revisar plan">
+                                            ✓ Revisar
+                                        </a>
+                                    {% else %}
+                                        <a href="/plan/{{ item.plan.id }}/" class="btn btn-secondary" title="Ver plan">
+                                            📄 Plan
+                                        </a>
+                                    {% endif %}
+                                {% endif %}
+                                <a href="/tecnico/evaluacion/crear/{{ item.proveedor.id }}/" class="btn btn-success" title="Nueva evaluación">
+                                    ➕
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
+                            <div style="font-size: 48px;">📭</div>
+                            <p>No se encontraron proveedores con evaluaciones</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Botones de acción -->
+        <div class="mt-4">
+            <a href="/tecnico/" class="btn btn-secondary">
+                ← Volver al Panel
+            </a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+
+{% block title %}Cambiar Estado - Plan {{ plan.id }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                {% if es_proveedor %}
+                <li class="breadcrumb-item"><a href="{% url 'proveedor_dashboard' %}">Dashboard</a></li>
+                {% else %}
+                <li class="breadcrumb-item"><a href="{% url 'tecnico_panel' %}">Panel Técnico</a></li>
+                {% endif %}
+                <li class="breadcrumb-item"><a href="{% url 'ver_plan' plan.id %}">Plan #{{ plan.id }}</a></li>
+                <li class="breadcrumb-item active">Cambiar Estado</li>
+            </ol>
+        </nav>
+        <h2><i class="bi bi-arrow-left-right"></i> Cambiar Estado del Plan</h2>
+        <p class="text-muted">{{ plan.proveedor.razon_social }} - {{ plan.evaluacion.periodo }}</p>
+    </div>
+</div>
+
+<!-- Información Actual -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="alert alert-info">
+            <h5><i class="bi bi-info-circle"></i> Estado Actual</h5>
+            <p class="mb-0">
+                <strong>Estado:</strong>
+                <span class="badge bg-primary fs-6">{{ plan.get_estado_display }}</span>
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Formulario de Cambio de Estado -->
+{% if estados_disponibles %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-pencil-square"></i> Seleccionar Nuevo Estado</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <!-- Selección de Estado -->
+                    <div class="mb-3">
+                        <label for="nuevo_estado" class="form-label">Nuevo Estado *</label>
+                        <select class="form-select" id="nuevo_estado" name="nuevo_estado" required>
+                            <option value="">-- Seleccione un estado --</option>
+                            {% for codigo, nombre in estados_disponibles %}
+                            <option value="{{ codigo }}">{{ nombre }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Seleccione el estado al que desea cambiar el plan</div>
+                    </div>
+
+                    <!-- Campos dinámicos según el estado seleccionado -->
+                    <div id="campos-adicionales">
+                        <!-- Número de Radicado (para PM_RADICADO) -->
+                        <div id="campo-numero-radicado" class="mb-3 d-none">
+                            <label for="numero_radicado" class="form-label">Número de Radicado *</label>
+                            <input type="text" class="form-control" id="numero_radicado" name="numero_radicado"
+                                   placeholder="Ejemplo: RAD-2025-001">
+                            <div class="form-text">Ingrese el número de radicado asignado</div>
+                        </div>
+
+                        <!-- Motivo de Rechazo (para RECHAZADO) -->
+                        <div id="campo-motivo-rechazo" class="mb-3 d-none">
+                            <label for="motivo_rechazo" class="form-label">Motivo de Rechazo *</label>
+                            <textarea class="form-control" id="motivo_rechazo" name="motivo_rechazo"
+                                      rows="3" placeholder="Describa el motivo del rechazo"></textarea>
+                            <div class="form-text">Explique por qué se rechaza el plan</div>
+                        </div>
+
+                        <!-- Observaciones de Aclaración (para ACLARACION) -->
+                        <div id="campo-observaciones-aclaracion" class="mb-3 d-none">
+                            <label for="observaciones_aclaracion" class="form-label">Observaciones de Aclaración *</label>
+                            <textarea class="form-control" id="observaciones_aclaracion" name="observaciones_aclaracion"
+                                      rows="3" placeholder="Describa qué necesita ser aclarado"></textarea>
+                            <div class="form-text">Indique qué puntos requieren aclaración</div>
+                        </div>
+
+                        <!-- Carta de Evaluación (para PROCESO_FIRMAS) -->
+                        <div id="campo-carta-evaluacion" class="mb-3 d-none">
+                            <label for="carta_evaluacion" class="form-label">Carta de Evaluación *</label>
+                            <input type="file" class="form-control" id="carta_evaluacion" name="carta_evaluacion"
+                                   accept=".pdf,.doc,.docx">
+                            <div class="form-text">Adjunte la carta de evaluación en formato PDF o Word</div>
+                        </div>
+                    </div>
+
+                    <!-- Comentario General -->
+                    <div class="mb-3">
+                        <label for="comentario" class="form-label">Comentario</label>
+                        <textarea class="form-control" id="comentario" name="comentario" rows="3"
+                                  placeholder="Agregue un comentario sobre este cambio (opcional)"></textarea>
+                        <div class="form-text">Opcional: Agregue información adicional sobre este cambio</div>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Cambiar Estado
+                        </button>
+                        <a href="{% url 'ver_plan' plan.id %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de Ayuda -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="bi bi-question-circle"></i> Ayuda</h6>
+            </div>
+            <div class="card-body">
+                <h6>Estados Disponibles:</h6>
+                <ul class="small">
+                    {% for codigo, nombre in estados_disponibles %}
+                    <li><strong>{{ nombre }}</strong></li>
+                    {% endfor %}
+                </ul>
+                <hr>
+                <h6>Información:</h6>
+                <ul class="small">
+                    <li>Solo puede cambiar a estados permitidos por el flujo</li>
+                    <li>Algunos cambios requieren información adicional</li>
+                    <li>Los cambios quedan registrados en el historial</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- No hay estados disponibles -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="alert alert-warning">
+            <h5><i class="bi bi-exclamation-triangle"></i> No hay estados disponibles</h5>
+            <p class="mb-0">No puede realizar ningún cambio de estado desde el estado actual.</p>
+            <p class="mb-0">
+                {% if not es_proveedor and not es_gestor and not es_tecnico %}
+                Esto puede deberse a que no tiene los permisos necesarios.
+                {% else %}
+                El plan puede estar en un estado final o no tiene transiciones disponibles.
+                {% endif %}
+            </p>
+            <a href="{% url 'ver_plan' plan.id %}" class="btn btn-primary mt-3">
+                <i class="bi bi-arrow-left"></i> Volver al Plan
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectEstado = document.getElementById('nuevo_estado');
+    const campoRadicado = document.getElementById('campo-numero-radicado');
+    const campoRechazo = document.getElementById('campo-motivo-rechazo');
+    const campoAclaracion = document.getElementById('campo-observaciones-aclaracion');
+    const campoCarta = document.getElementById('campo-carta-evaluacion');
+
+    // Mostrar/ocultar campos según el estado seleccionado
+    selectEstado.addEventListener('change', function() {
+        const estado = this.value;
+
+        // Ocultar todos los campos adicionales
+        campoRadicado.classList.add('d-none');
+        campoRechazo.classList.add('d-none');
+        campoAclaracion.classList.add('d-none');
+        campoCarta.classList.add('d-none');
+
+        // Remover required
+        document.getElementById('numero_radicado').removeAttribute('required');
+        document.getElementById('motivo_rechazo').removeAttribute('required');
+        document.getElementById('observaciones_aclaracion').removeAttribute('required');
+        document.getElementById('carta_evaluacion').removeAttribute('required');
+
+        // Mostrar campos según el estado
+        if (estado === 'PM_RADICADO') {
+            campoRadicado.classList.remove('d-none');
+            document.getElementById('numero_radicado').setAttribute('required', 'required');
+        } else if (estado === 'RECHAZADO') {
+            campoRechazo.classList.remove('d-none');
+            document.getElementById('motivo_rechazo').setAttribute('required', 'required');
+        } else if (estado === 'ACLARACION') {
+            campoAclaracion.classList.remove('d-none');
+            document.getElementById('observaciones_aclaracion').setAttribute('required', 'required');
+        } else if (estado === 'PROCESO_FIRMAS') {
+            campoCarta.classList.remove('d-none');
+            document.getElementById('carta_evaluacion').setAttribute('required', 'required');
+        }
+    });
+});
+</script>
+{% endblock %}

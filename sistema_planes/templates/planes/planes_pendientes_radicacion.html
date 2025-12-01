@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}Planes Pendientes de Radicación{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="bi bi-folder-check"></i> Planes Pendientes de Radicación</h2>
+        <p class="text-muted">Gestión de Radicación - Gestor de Compras</p>
+    </div>
+</div>
+
+<!-- Estadísticas -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="alert alert-info">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Planes Pendientes</h5>
+                    <p class="mb-0">Hay <strong>{{ total_pendientes }}</strong> plan(es) esperando ser radicado(s)</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="{% url 'gestor_compras_dashboard' %}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left"></i> Volver al Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de Planes -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-list"></i> Lista de Planes</h5>
+            </div>
+            <div class="card-body">
+                {% if planes %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Proveedor</th>
+                                <th>NIT</th>
+                                <th>Evaluación</th>
+                                <th>Puntaje</th>
+                                <th>Fecha Revisión</th>
+                                <th>Revisado Por</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for plan in planes %}
+                            <tr>
+                                <td><strong>#{{ plan.id }}</strong></td>
+                                <td>{{ plan.proveedor.razon_social }}</td>
+                                <td>{{ plan.proveedor.nit }}</td>
+                                <td>{{ plan.evaluacion.periodo }}</td>
+                                <td>
+                                    <span class="badge {% if plan.evaluacion.puntaje < 60 %}bg-danger{% else %}bg-warning{% endif %}">
+                                        {{ plan.evaluacion.puntaje }}/100
+                                    </span>
+                                </td>
+                                <td>{{ plan.fecha_revision|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    {% if plan.revisado_por %}
+                                    {{ plan.revisado_por.get_full_name|default:plan.revisado_por.username }}
+                                    {% else %}
+                                    <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td><span class="badge bg-warning">{{ plan.get_estado_display }}</span></td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'ver_plan' plan.id %}" class="btn btn-outline-primary"
+                                           title="Ver Detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{% url 'radicar_plan' plan.id %}" class="btn btn-success"
+                                           title="Radicar">
+                                            <i class="bi bi-check-circle"></i> Radicar
+                                        </a>
+                                        <a href="{% url 'rechazar_plan' plan.id %}" class="btn btn-danger"
+                                           title="Rechazar">
+                                            <i class="bi bi-x-circle"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle"></i> No hay planes pendientes de radicación en este momento.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

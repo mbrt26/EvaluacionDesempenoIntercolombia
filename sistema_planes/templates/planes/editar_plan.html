@@ -1,0 +1,377 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Plan de Mejoramiento{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard_proveedor' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'ver_plan' plan.id %}">Ver Plan</a></li>
+                <li class="breadcrumb-item active">Editar Plan</li>
+            </ol>
+        </nav>
+        <h2>Editar Plan de Mejoramiento</h2>
+        <p class="text-muted">
+            Evaluación: {{ plan.evaluacion.periodo }} - Puntaje: {{ plan.evaluacion.puntaje }}/100
+        </p>
+    </div>
+</div>
+
+<!-- Comentarios del Técnico -->
+{% if plan.comentarios_tecnico %}
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <h5 class="alert-heading">
+        <i class="bi bi-exclamation-triangle"></i> Ajustes Solicitados por el Técnico
+    </h5>
+    <p>{{ plan.comentarios_tecnico|linebreaks }}</p>
+    <hr>
+    <p class="mb-0">
+        <small>
+            <strong>Revisado por:</strong> {{ plan.revisado_por.get_full_name|default:plan.revisado_por.username }}<br>
+            <strong>Fecha:</strong> {{ plan.fecha_revision|date:"d/m/Y H:i" }}
+        </small>
+    </p>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<form method="POST" enctype="multipart/form-data" id="editPlanForm">
+    {% csrf_token %}
+    
+    <!-- Análisis de Causa Raíz -->
+    <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">1. Análisis de Causa Raíz <span class="text-warning">*</span></h5>
+        </div>
+        <div class="card-body">
+            <textarea name="analisis_causa"
+                      class="form-control"
+                      rows="5"
+                      required
+                      minlength="100">{{ plan.analisis_causa }}</textarea>
+            <small class="text-muted">Mínimo 100 caracteres. Ajuste según los comentarios del técnico.</small>
+
+            <!-- Archivo adjunto -->
+            <div class="mt-3">
+                <label class="form-label"><i class="bi bi-paperclip"></i> Archivo Adjunto (opcional)</label>
+                {% if plan.archivo_analisis_causa %}
+                <div class="alert alert-info mb-2">
+                    <i class="bi bi-file-earmark-check"></i> Archivo actual:
+                    <a href="{{ plan.archivo_analisis_causa.url }}" target="_blank" class="alert-link">
+                        {{ plan.archivo_analisis_causa.name|split:'/'|last }}
+                    </a>
+                </div>
+                {% endif %}
+                <input type="file"
+                       name="archivo_analisis_causa"
+                       class="form-control"
+                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png">
+                <small class="text-muted">Formatos permitidos: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Acciones de Mejora -->
+    <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">2. Acciones de Mejora <span class="text-warning">*</span></h5>
+        </div>
+        <div class="card-body">
+            <div id="acciones-container">
+                {% for accion in acciones %}
+                <div class="accion-item border rounded p-3 mb-3 bg-light">
+                    <h6>Acción {{ forloop.counter }}</h6>
+                    <div class="mb-2">
+                        <label>Descripción de la acción <span class="text-danger">*</span></label>
+                        <input type="text" 
+                               name="accion_{{ forloop.counter }}" 
+                               class="form-control" 
+                               value="{{ accion.descripcion }}"
+                               required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label>Responsable <span class="text-danger">*</span></label>
+                            <input type="text" 
+                                   name="responsable_{{ forloop.counter }}" 
+                                   class="form-control" 
+                                   value="{{ accion.responsable }}"
+                                   required>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label>Fecha compromiso <span class="text-danger">*</span></label>
+                            <input type="date" 
+                                   name="fecha_{{ forloop.counter }}" 
+                                   class="form-control" 
+                                   value="{{ accion.fecha_compromiso|date:'Y-m-d' }}"
+                                   required>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label>Indicador de éxito</label>
+                        <input type="text" 
+                               name="indicador_{{ forloop.counter }}" 
+                               class="form-control"
+                               value="{{ accion.indicador }}">
+                    </div>
+                </div>
+                {% empty %}
+                <div class="accion-item border rounded p-3 mb-3">
+                    <h6>Acción 1</h6>
+                    <div class="mb-2">
+                        <label>Descripción de la acción <span class="text-danger">*</span></label>
+                        <input type="text" name="accion_1" class="form-control" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label>Responsable <span class="text-danger">*</span></label>
+                            <input type="text" name="responsable_1" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label>Fecha compromiso <span class="text-danger">*</span></label>
+                            <input type="date" name="fecha_1" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label>Indicador de éxito</label>
+                        <input type="text" name="indicador_1" class="form-control">
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <button type="button" class="btn btn-secondary" onclick="agregarAccion()">
+                <i class="bi bi-plus"></i> Agregar otra acción
+            </button>
+        </div>
+    </div>
+    
+    <!-- Información General -->
+    <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">3. Información General <span class="text-warning">*</span></h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label>Acciones propuestas (resumen) <span class="text-danger">*</span></label>
+                <textarea name="acciones_propuestas"
+                          class="form-control"
+                          rows="3"
+                          required>{{ plan.acciones_propuestas }}</textarea>
+            </div>
+
+            <!-- Archivo adjunto para Acciones Propuestas -->
+            <div class="mb-3">
+                <label class="form-label"><i class="bi bi-paperclip"></i> Archivo Adjunto Acciones Propuestas (opcional)</label>
+                {% if plan.archivo_acciones_propuestas %}
+                <div class="alert alert-info mb-2">
+                    <i class="bi bi-file-earmark-check"></i> Archivo actual:
+                    <a href="{{ plan.archivo_acciones_propuestas.url }}" target="_blank" class="alert-link">
+                        {{ plan.archivo_acciones_propuestas.name|split:'/'|last }}
+                    </a>
+                </div>
+                {% endif %}
+                <input type="file"
+                       name="archivo_acciones_propuestas"
+                       class="form-control"
+                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png">
+                <small class="text-muted">Formatos permitidos: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG</small>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label>Responsable general del plan <span class="text-danger">*</span></label>
+                    <input type="text" 
+                           name="responsable" 
+                           class="form-control" 
+                           value="{{ plan.responsable }}"
+                           required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Fecha de implementación <span class="text-danger">*</span></label>
+                    <input type="date" 
+                           name="fecha_implementacion" 
+                           class="form-control" 
+                           value="{{ plan.fecha_implementacion|date:'Y-m-d' }}"
+                           required>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label>Indicadores de seguimiento <span class="text-danger">*</span></label>
+                <textarea name="indicadores"
+                          class="form-control"
+                          rows="3"
+                          required>{{ plan.indicadores_seguimiento }}</textarea>
+            </div>
+
+            <!-- Archivo adjunto para Indicadores -->
+            <div class="mb-3">
+                <label class="form-label"><i class="bi bi-paperclip"></i> Archivo Adjunto Indicadores (opcional)</label>
+                {% if plan.archivo_indicadores %}
+                <div class="alert alert-info mb-2">
+                    <i class="bi bi-file-earmark-check"></i> Archivo actual:
+                    <a href="{{ plan.archivo_indicadores.url }}" target="_blank" class="alert-link">
+                        {{ plan.archivo_indicadores.name|split:'/'|last }}
+                    </a>
+                </div>
+                {% endif %}
+                <input type="file"
+                       name="archivo_indicadores"
+                       class="form-control"
+                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png">
+                <small class="text-muted">Formatos permitidos: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Otros Archivos Adjuntos -->
+    <div class="card mb-3">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">4. Otros Archivos Adjuntos</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">Adjunte cualquier otro documento de soporte relevante para el plan de mejoramiento.</p>
+
+            {% if plan.archivo_otros %}
+            <div class="alert alert-info mb-2">
+                <i class="bi bi-file-earmark-check"></i> Archivo actual:
+                <a href="{{ plan.archivo_otros.url }}" target="_blank" class="alert-link">
+                    {{ plan.archivo_otros.name|split:'/'|last }}
+                </a>
+            </div>
+            {% endif %}
+
+            <input type="file"
+                   name="archivo_otros"
+                   class="form-control"
+                   accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png">
+            <small class="text-muted">Formatos permitidos: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG. Máximo 10MB por archivo.</small>
+
+            <!-- Mantener archivos adjuntos legacy si existen -->
+            {% if plan.adjuntos.all %}
+            <div class="mt-3">
+                <h6><i class="bi bi-paperclip"></i> Archivos anteriores:</h6>
+                <div class="list-group">
+                    {% for adjunto in plan.adjuntos.all %}
+                    <div class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            <div class="fw-bold">
+                                <i class="bi bi-file-earmark"></i>
+                                {{ adjunto.get_tipo_documento_display }}
+                            </div>
+                            <a href="{{ adjunto.archivo.url }}" target="_blank" class="text-decoration-none">
+                                <i class="bi bi-download"></i> {{ adjunto.nombre_original }}
+                            </a>
+                            {% if adjunto.descripcion %}
+                            <br><small class="text-muted">{{ adjunto.descripcion }}</small>
+                            {% endif %}
+                        </div>
+                        <small class="text-muted">{{ adjunto.fecha_subida|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Nota sobre versión -->
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> 
+        <strong>Nota:</strong> Este plan será guardado como versión {{ plan.numero_version|add:1 }}.
+        El historial de versiones anteriores se mantendrá para referencia.
+    </div>
+    
+    <!-- Botones -->
+    <div class="d-flex justify-content-between mb-5">
+        <a href="{% url 'ver_plan' plan.id %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Cancelar
+        </a>
+        <button type="submit" class="btn btn-primary btn-lg" onclick="return confirm('¿Está seguro de enviar el plan con los ajustes realizados?')">
+            <i class="bi bi-send"></i> Enviar Plan Ajustado
+        </button>
+    </div>
+</form>
+
+<script>
+let contadorAcciones = {{ acciones|length|default:1 }};
+let contadorArchivos = 1;
+
+function agregarAccion() {
+    contadorAcciones++;
+    const container = document.getElementById('acciones-container');
+    const div = document.createElement('div');
+    div.className = 'accion-item border rounded p-3 mb-3';
+    div.innerHTML = `
+        <div class="d-flex justify-content-between">
+            <h6>Acción ${contadorAcciones}</h6>
+            <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.parentElement.remove()">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+        <div class="mb-2">
+            <label>Descripción de la acción</label>
+            <input type="text" name="accion_${contadorAcciones}" class="form-control">
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-2">
+                <label>Responsable</label>
+                <input type="text" name="responsable_${contadorAcciones}" class="form-control">
+            </div>
+            <div class="col-md-6 mb-2">
+                <label>Fecha compromiso</label>
+                <input type="date" name="fecha_${contadorAcciones}" class="form-control">
+            </div>
+        </div>
+        <div class="mb-2">
+            <label>Indicador de éxito</label>
+            <input type="text" name="indicador_${contadorAcciones}" class="form-control">
+        </div>
+    `;
+    container.appendChild(div);
+}
+
+function agregarArchivo() {
+    contadorArchivos++;
+    const container = document.getElementById('archivos-container');
+    const div = document.createElement('div');
+    div.className = 'archivo-item border rounded p-3 mb-3 bg-light';
+    div.innerHTML = `
+        <div class="d-flex justify-content-between mb-2">
+            <h6>Archivo ${contadorArchivos}</h6>
+            <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.parentElement.remove()">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-2">
+                <label>Tipo de Documento</label>
+                <select name="tipo_documento_${contadorArchivos}" class="form-select">
+                    <option value="PLAN_MEJORAMIENTO">Plan de Mejoramiento</option>
+                    <option value="ANALISIS_CAUSA_RAIZ">Análisis de Causa Raíz</option>
+                    <option value="OTRO">Otro</option>
+                </select>
+            </div>
+            <div class="col-md-6 mb-2">
+                <label>Archivo</label>
+                <input type="file"
+                       name="archivo_${contadorArchivos}"
+                       class="form-control"
+                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png">
+            </div>
+        </div>
+        <div class="mb-2">
+            <label>Descripción (opcional)</label>
+            <input type="text"
+                   name="descripcion_${contadorArchivos}"
+                   class="form-control"
+                   placeholder="Descripción del archivo">
+        </div>
+    `;
+    container.appendChild(div);
+}
+</script>
+{% endblock %}

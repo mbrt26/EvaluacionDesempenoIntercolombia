@@ -1,0 +1,686 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Analytics - Sistema de Planes de Mejoramiento{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-color: #0d6efd;
+        --success-color: #198754;
+        --warning-color: #ffc107;
+        --danger-color: #dc3545;
+        --info-color: #0dcaf0;
+        --dark-color: #212529;
+    }
+
+    body {
+        background-color: #f8f9fa;
+    }
+
+    .dashboard-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        transition: transform 0.2s, box-shadow 0.2s;
+        border-left: 4px solid;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    }
+
+    .stat-card.primary { border-left-color: var(--primary-color); }
+    .stat-card.success { border-left-color: var(--success-color); }
+    .stat-card.warning { border-left-color: var(--warning-color); }
+    .stat-card.danger { border-left-color: var(--danger-color); }
+    .stat-card.info { border-left-color: var(--info-color); }
+
+    .stat-icon {
+        font-size: 2.5rem;
+        opacity: 0.3;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 0.5rem 0;
+    }
+
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .chart-container {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        position: relative;
+        height: 400px;
+    }
+
+    .chart-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: var(--dark-color);
+    }
+
+    .alert-card {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+
+    .badge-custom {
+        padding: 0.5rem 1rem;
+        border-radius: 2rem;
+        font-weight: 500;
+    }
+
+    .activity-item {
+        padding: 0.75rem;
+        border-left: 3px solid #e9ecef;
+        margin-bottom: 0.5rem;
+        transition: all 0.2s;
+    }
+
+    .activity-item:hover {
+        background-color: #f8f9fa;
+        border-left-color: var(--primary-color);
+    }
+
+    .provider-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .provider-item:last-child {
+        border-bottom: none;
+    }
+
+    .progress-custom {
+        height: 8px;
+        border-radius: 1rem;
+    }
+
+    .criterio-bar {
+        margin-bottom: 1rem;
+    }
+
+    .criterio-bar .progress {
+        height: 30px;
+    }
+
+    .criterio-label {
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="container">
+            <h1 class="mb-2">
+                <i class="bi bi-graph-up"></i> Dashboard Analytics
+            </h1>
+            <p class="mb-0 opacity-75">Panel de control y análisis de desempeño de proveedores</p>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert-card">
+                <h5 class="mb-3"><i class="bi bi-funnel"></i> Filtros</h5>
+                <form method="get" action="{% url 'dashboard_analytics' %}" class="row g-3">
+                    <div class="col-md-5">
+                        <label for="proveedor" class="form-label">Proveedor (NIT o Razón Social)</label>
+                        <input type="text" class="form-control" id="proveedor" name="proveedor"
+                               value="{{ filtro_proveedor }}" placeholder="Buscar proveedor...">
+                    </div>
+                    <div class="col-md-5">
+                        <label for="documento" class="form-label">Documento Evaluado (Contrato o Subcategoría)</label>
+                        <input type="text" class="form-control" id="documento" name="documento"
+                               value="{{ filtro_documento }}" placeholder="Buscar documento...">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end gap-2">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-search"></i> Filtrar
+                        </button>
+                        <a href="{% url 'dashboard_analytics' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i>
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards Row 1 -->
+    <div class="row">
+        <div class="col-md-4">
+            <div class="stat-card primary">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-label">Total Proveedores</div>
+                        <div class="stat-value">{{ total_proveedores }}</div>
+                    </div>
+                    <i class="bi bi-building stat-icon"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card info">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-label">Total Evaluaciones</div>
+                        <div class="stat-value">{{ total_evaluaciones }}</div>
+                    </div>
+                    <i class="bi bi-clipboard-data stat-icon"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card warning">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-label">Planes Activos</div>
+                        <div class="stat-value">{{ total_planes }}</div>
+                    </div>
+                    <i class="bi bi-file-earmark-text stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="chart-container">
+                <h5 class="chart-title">
+                    <i class="bi bi-graph-up"></i> Tendencia de Evaluaciones (Últimos 6 Meses)
+                </h5>
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="chart-container">
+                <h5 class="chart-title">
+                    <i class="bi bi-pie-chart"></i> Distribución de Evaluaciones
+                    <small class="text-muted d-block" style="font-size: 0.75rem; font-weight: normal; margin-top: 0.25rem;">
+                        (Solo evaluaciones que requieren plan de mejoramiento)
+                    </small>
+                </h5>
+                <canvas id="evaluacionesChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <h5 class="chart-title">
+                    <i class="bi bi-pentagon"></i> Promedios por Criterio
+                </h5>
+                <canvas id="criteriosChart"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <h5 class="chart-title">
+                    <i class="bi bi-bar-chart"></i> Estados de Planes de Mejoramiento
+                </h5>
+                <canvas id="planesChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Promedios por Criterio (Barras) -->
+    <div class="row">
+        <div class="col-12">
+            <div class="alert-card">
+                <h5 class="mb-4"><i class="bi bi-bar-chart-line"></i> Desglose de Promedios por Criterio</h5>
+                <div class="criterio-bar">
+                    <div class="criterio-label">Gestión: {{ promedio_gestion }}/25</div>
+                    <div class="progress">
+                        <div class="progress-bar bg-primary" style="width: {% widthratio promedio_gestion 25 100 %}%">
+                            {{ promedio_gestion }}
+                        </div>
+                    </div>
+                </div>
+                <div class="criterio-bar">
+                    <div class="criterio-label">Calidad: {{ promedio_calidad }}/25</div>
+                    <div class="progress">
+                        <div class="progress-bar bg-info" style="width: {% widthratio promedio_calidad 25 100 %}%">
+                            {{ promedio_calidad }}
+                        </div>
+                    </div>
+                </div>
+                <div class="criterio-bar">
+                    <div class="criterio-label">Oportunidad: {{ promedio_oportunidad }}/25</div>
+                    <div class="progress">
+                        <div class="progress-bar bg-success" style="width: {% widthratio promedio_oportunidad 25 100 %}%">
+                            {{ promedio_oportunidad }}
+                        </div>
+                    </div>
+                </div>
+                <div class="criterio-bar">
+                    <div class="criterio-label">Ambiental y Social: {{ promedio_ambiental }}/25</div>
+                    <div class="progress">
+                        <div class="progress-bar bg-warning" style="width: {% widthratio promedio_ambiental 25 100 %}%">
+                            {{ promedio_ambiental }}
+                        </div>
+                    </div>
+                </div>
+                <div class="criterio-bar">
+                    <div class="criterio-label">Seguridad y Salud en el Trabajo: {{ promedio_sst }}/25</div>
+                    <div class="progress">
+                        <div class="progress-bar bg-danger" style="width: {% widthratio promedio_sst 25 100 %}%">
+                            {{ promedio_sst }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total de Evaluaciones por Categoría -->
+    <div class="row mb-3">
+        <div class="col-lg-6">
+            <div class="card border-warning">
+                <div class="card-body text-center py-3">
+                    <h2 class="mb-0 text-warning">{{ total_evaluaciones_aceptables }}</h2>
+                    <p class="mb-0 text-muted">Evaluaciones Aceptables (60-79)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card border-danger">
+                <div class="card-body text-center py-3">
+                    <h2 class="mb-0 text-danger">{{ total_evaluaciones_criticas }}</h2>
+                    <p class="mb-0 text-muted">Evaluaciones Críticas (&lt;60)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Evaluaciones -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="alert-card">
+                <h5 class="mb-3">
+                    <i class="bi bi-graph-down-arrow text-warning"></i> Top 5 Evaluaciones Aceptables (60-79)
+                    <small class="text-muted d-block" style="font-size: 0.75rem; font-weight: normal; margin-top: 0.25rem;">
+                        Ordenadas de menor a mayor puntaje
+                    </small>
+                </h5>
+                {% for evaluacion in top_5_aceptables %}
+                <div class="provider-item">
+                    <div>
+                        <strong>{{ evaluacion.proveedor.razon_social }}</strong>
+                        <br>
+                        <small class="text-muted">
+                            {{ evaluacion.fecha|date:"d/m/Y" }}
+                            {% if evaluacion.numero_contrato %} - {{ evaluacion.numero_contrato }}{% endif %}
+                        </small>
+                    </div>
+                    <span class="badge bg-warning text-dark badge-custom">{{ evaluacion.puntaje }}/100</span>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center py-3">No hay evaluaciones aceptables</p>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="alert-card">
+                <h5 class="mb-3">
+                    <i class="bi bi-exclamation-triangle text-danger"></i> Top 5 Evaluaciones Críticas (&lt;60)
+                    <small class="text-muted d-block" style="font-size: 0.75rem; font-weight: normal; margin-top: 0.25rem;">
+                        Ordenadas de menor a mayor puntaje
+                    </small>
+                </h5>
+                {% for evaluacion in top_5_criticas %}
+                <div class="provider-item">
+                    <div>
+                        <strong>{{ evaluacion.proveedor.razon_social }}</strong>
+                        <br>
+                        <small class="text-muted">
+                            {{ evaluacion.fecha|date:"d/m/Y" }}
+                            {% if evaluacion.numero_contrato %} - {{ evaluacion.numero_contrato }}{% endif %}
+                        </small>
+                    </div>
+                    <span class="badge bg-danger badge-custom">{{ evaluacion.puntaje }}/100</span>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center py-3">No hay evaluaciones críticas</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerts Row -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="alert-card">
+                <h5 class="text-danger mb-3">
+                    <i class="bi bi-exclamation-circle"></i> Planes Vencidos ({{ planes_vencidos|length }})
+                </h5>
+                {% if planes_vencidos %}
+                    {% for plan in planes_vencidos %}
+                    <div class="activity-item">
+                        <strong>{{ plan.proveedor.razon_social }}</strong>
+                        <br>
+                        <small class="text-muted">
+                            Vencido hace {{ plan.dias_para_vencimiento|add:"-1" }} días
+                            - Estado: {{ plan.get_estado_display }}
+                        </small>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-success mb-0">
+                        <i class="bi bi-check-circle"></i> No hay planes vencidos
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="alert-card">
+                <h5 class="text-warning mb-3">
+                    <i class="bi bi-clock-history"></i> Planes Próximos a Vencer ({{ planes_por_vencer|length }})
+                </h5>
+                {% if planes_por_vencer %}
+                    {% for plan in planes_por_vencer %}
+                    <div class="activity-item">
+                        <strong>{{ plan.proveedor.razon_social }}</strong>
+                        <br>
+                        <small class="text-muted">
+                            Vence en {{ plan.dias_para_vencimiento }} días
+                            - Estado: {{ plan.get_estado_display }}
+                        </small>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> No hay planes próximos a vencer
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-12">
+            <div class="alert-card">
+                <h5 class="mb-3"><i class="bi bi-activity"></i> Actividad Reciente</h5>
+                {% for actividad in actividad_reciente %}
+                <div class="activity-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong>{{ actividad.plan.proveedor.razon_social }}</strong>
+                            <span class="mx-2">→</span>
+                            <span class="badge bg-secondary">{{ actividad.estado_nuevo }}</span>
+                        </div>
+                        <small class="text-muted">{{ actividad.fecha_cambio|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    {% if actividad.comentario %}
+                    <small class="text-muted d-block mt-1">{{ actividad.comentario|truncatewords:15 }}</small>
+                    {% endif %}
+                    <small class="text-muted">Por: {{ actividad.usuario.get_full_name|default:actividad.usuario.username }}</small>
+                </div>
+                {% empty %}
+                <p class="text-muted mb-0">No hay actividad reciente</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Metrics -->
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="stat-card info">
+                <h6 class="mb-3"><i class="bi bi-clock"></i> Tiempo Promedio de Respuesta</h6>
+                <div class="stat-value text-info">{{ tiempo_promedio_respuesta }} <small>días</small></div>
+                <small class="text-muted">Desde envío hasta aprobación</small>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="stat-card primary">
+                <h6 class="mb-3"><i class="bi bi-check2-all"></i> Planes Aprobados</h6>
+                <div class="stat-value text-primary">{{ planes_aprobados }}</div>
+                <small class="text-muted">Total de planes aprobados</small>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="stat-card danger">
+                <h6 class="mb-3"><i class="bi bi-x-octagon"></i> Planes Rechazados</h6>
+                <div class="stat-value text-danger">{{ planes_rechazados }}</div>
+                <small class="text-muted">Total de planes rechazados</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+    // Parse chart data from Django context
+    const chartData = JSON.parse('{{ chart_data|safe }}');
+
+    // Configure Chart.js defaults
+    Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial';
+    Chart.defaults.font.size = 13;
+    Chart.defaults.color = '#666';
+
+    // 1. Trend Chart (Line + Bar Combo)
+    const trendCtx = document.getElementById('trendChart').getContext('2d');
+    new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: chartData.meses_labels,
+            datasets: [{
+                label: 'Cantidad de Evaluaciones',
+                data: chartData.evaluaciones_counts,
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true,
+                yAxisID: 'y'
+            }, {
+                label: 'Promedio de Puntaje',
+                data: chartData.evaluaciones_promedios,
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true,
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Cantidad'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Promedio'
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    }
+                }
+            }
+        }
+    });
+
+    // 2. Evaluaciones Pie Chart
+    // Solo muestra evaluaciones que requieren plan de mejoramiento (< 80)
+    const evaluacionesCtx = document.getElementById('evaluacionesChart').getContext('2d');
+    new Chart(evaluacionesCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Aceptable (60-79)', 'Crítica (<60)'],
+            datasets: [{
+                data: [chartData.distribucion_evaluaciones[1], chartData.distribucion_evaluaciones[2]],
+                backgroundColor: [
+                    'rgba(255, 193, 7, 0.8)',
+                    'rgba(220, 53, 69, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(255, 193, 7, 1)',
+                    'rgba(220, 53, 69, 1)'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // 3. Criterios Radar Chart
+    const criteriosCtx = document.getElementById('criteriosChart').getContext('2d');
+    new Chart(criteriosCtx, {
+        type: 'radar',
+        data: {
+            labels: chartData.criterios_labels,
+            datasets: [{
+                label: 'Promedio por Criterio',
+                data: chartData.criterios_valores,
+                backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                borderColor: 'rgba(102, 126, 234, 1)',
+                borderWidth: 2,
+                pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(102, 126, 234, 1)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 25,
+                    ticks: {
+                        stepSize: 5
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+
+    // 4. Planes Bar Chart
+    const planesCtx = document.getElementById('planesChart').getContext('2d');
+    new Chart(planesCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Borrador', 'Enviado', 'En Revisión', 'Requiere Ajustes', 'Aprobado', 'Rechazado'],
+            datasets: [{
+                label: 'Cantidad de Planes',
+                data: chartData.distribucion_planes,
+                backgroundColor: [
+                    'rgba(108, 117, 125, 0.8)',
+                    'rgba(13, 110, 253, 0.8)',
+                    'rgba(13, 202, 240, 0.8)',
+                    'rgba(255, 193, 7, 0.8)',
+                    'rgba(25, 135, 84, 0.8)',
+                    'rgba(220, 53, 69, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(108, 117, 125, 1)',
+                    'rgba(13, 110, 253, 1)',
+                    'rgba(13, 202, 240, 1)',
+                    'rgba(255, 193, 7, 1)',
+                    'rgba(25, 135, 84, 1)',
+                    'rgba(220, 53, 69, 1)'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

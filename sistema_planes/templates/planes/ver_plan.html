@@ -1,0 +1,731 @@
+{% extends 'base.html' %}
+{% load plan_tags %}
+
+{% block title %}Ver Plan - {{ plan.proveedor.razon_social }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                {% if es_proveedor %}
+                <li class="breadcrumb-item"><a href="{% url 'dashboard_proveedor' %}">Dashboard</a></li>
+                {% else %}
+                <li class="breadcrumb-item"><a href="{% url 'tecnico_panel' %}">Panel Técnico</a></li>
+                {% endif %}
+                <li class="breadcrumb-item"><a href="{% url 'ver_evaluacion' plan.evaluacion.id %}">Evaluación</a></li>
+                <li class="breadcrumb-item active">Ver Plan</li>
+            </ol>
+        </nav>
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2>Plan de Mejoramiento</h2>
+                <p class="text-muted mb-0">{{ plan.proveedor.razon_social }} - {{ plan.evaluacion.periodo }}</p>
+            </div>
+            <div>
+                <a href="{% url 'ver_evaluacion' plan.evaluacion.id %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver a Evaluación
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estado del Plan -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Información del Plan
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>Estado Actual:</strong><br>
+                        {% if plan.estado == 'BORRADOR' %}
+                            <span class="badge bg-secondary">BORRADOR</span>
+                        {% elif plan.estado == 'ENVIADO' %}
+                            <span class="badge bg-info">ENVIADO</span>
+                        {% elif plan.estado == 'PM_REEVALUADO' %}
+                            <span class="badge bg-primary">PM REEVALUADO</span>
+                        {% elif plan.estado == 'SOLICITUD_AJUSTES' %}
+                            <span class="badge bg-warning text-dark">SOLICITUD DE AJUSTES</span>
+                        {% elif plan.estado == 'EN_RADICACION' %}
+                            <span class="badge bg-success">EN RADICACIÓN</span>
+                        {% elif plan.estado == 'EN_REVISION' %}
+                            <span class="badge bg-warning">EN REVISIÓN</span>
+                        {% elif plan.estado == 'REQUIERE_AJUSTES' %}
+                            <span class="badge bg-danger">REQUIERE AJUSTES</span>
+                        {% elif plan.estado == 'APROBADO' %}
+                            <span class="badge bg-success">APROBADO</span>
+                        {% elif plan.estado == 'RECHAZADO' %}
+                            <span class="badge bg-danger">RECHAZADO</span>
+                        {% elif plan.estado == 'CANCELACION_RADICADA' %}
+                            <span class="badge bg-dark">CANCELACIÓN RADICADA</span>
+                        {% elif plan.estado == 'NO_RECIBIDO' %}
+                            <span class="badge bg-secondary">NO RECIBIDO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Fecha de Envío:</strong><br>
+                        {{ plan.fecha_envio|date:"d/m/Y H:i" }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Versión:</strong><br>
+                        {{ plan.numero_version }}
+                    </div>
+                </div>
+                
+                {% if plan.comentarios_tecnico %}
+                <div class="alert {% if plan.estado == 'SOLICITUD_AJUSTES' %}alert-danger{% else %}alert-info{% endif %}">
+                    <h6><i class="bi bi-{% if plan.estado == 'SOLICITUD_AJUSTES' %}exclamation-triangle{% else %}chat-left-text{% endif %}"></i> {% if plan.estado == 'SOLICITUD_AJUSTES' %}⚠️ Observaciones del Técnico - Correcciones Requeridas{% else %}Comentarios del Técnico{% endif %}:</h6>
+                    <hr>
+                    <p class="mb-0"><strong>{{ plan.comentarios_tecnico|linebreaks }}</strong></p>
+                    {% if plan.revisado_por %}
+                    <hr>
+                    <small class="text-muted">
+                        Revisado por: {{ plan.revisado_por.get_full_name|default:plan.revisado_por.username }},
+                        {{ plan.fecha_revision|date:"d/m/Y H:i" }}
+                    </small>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-calendar"></i> Fechas Importantes
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li>
+                        <strong>Creación:</strong><br>
+                        {{ plan.fecha_creacion|date:"d/m/Y H:i" }}
+                    </li>
+                    {% if plan.fecha_limite %}
+                    <li class="mt-2">
+                        <strong>Fecha Límite:</strong><br>
+                        <span class="{% if plan.esta_vencido %}text-danger{% endif %}">
+                            {{ plan.fecha_limite|date:"d/m/Y" }}
+                            {% if plan.dias_para_vencimiento %}
+                                ({{ plan.dias_para_vencimiento }} días restantes)
+                            {% endif %}
+                        </span>
+                    </li>
+                    {% endif %}
+                    {% if plan.fecha_aprobacion %}
+                    <li class="mt-2">
+                        <strong>Fecha Aprobación:</strong><br>
+                        {{ plan.fecha_aprobacion|date:"d/m/Y H:i" }}
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contenido del Plan -->
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="bi bi-file-text"></i> Contenido del Plan
+            </h5>
+            {% if puede_editar %}
+            <span class="badge bg-warning text-dark">
+                <i class="bi bi-pencil"></i> Modo Edición
+            </span>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <label class="form-label"><strong>1. Análisis de Causa Raíz</strong></label>
+                {% if puede_editar %}
+                <textarea name="analisis_causa" class="form-control" rows="4" required>{{ plan.analisis_causa }}</textarea>
+                {% else %}
+                <div class="border rounded p-3 bg-light">
+                    {{ plan.analisis_causa|linebreaks }}
+                </div>
+                {% endif %}
+
+                {% if plan.archivo_analisis_causa %}
+                <div class="mt-2 alert alert-info">
+                    <i class="bi bi-file-earmark-arrow-down"></i>
+                    <strong>Archivo adjunto:</strong>
+                    <a href="{{ plan.archivo_analisis_causa.url }}" target="_blank" class="alert-link ms-2">
+                        <i class="bi bi-download"></i> {{ plan.archivo_analisis_causa.name|split:'/'|last }}
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label"><strong>2. Acciones Propuestas (Resumen)</strong></label>
+                {% if puede_editar %}
+                <textarea name="acciones_propuestas" class="form-control" rows="4" required>{{ plan.acciones_propuestas }}</textarea>
+                {% else %}
+                <div class="border rounded p-3 bg-light">
+                    {{ plan.acciones_propuestas|linebreaks }}
+                </div>
+                {% endif %}
+
+                {% if plan.archivo_acciones_propuestas %}
+                <div class="mt-2 alert alert-info">
+                    <i class="bi bi-file-earmark-arrow-down"></i>
+                    <strong>Archivo adjunto:</strong>
+                    <a href="{{ plan.archivo_acciones_propuestas.url }}" target="_blank" class="alert-link ms-2">
+                        <i class="bi bi-download"></i> {{ plan.archivo_acciones_propuestas.name|split:'/'|last }}
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label class="form-label"><strong>3. Responsable General</strong></label>
+                    {% if puede_editar %}
+                    <input type="text" name="responsable" class="form-control" value="{{ plan.responsable }}" required>
+                    {% else %}
+                    <p>{{ plan.responsable }}</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><strong>4. Fecha de Implementación</strong></label>
+                    {% if puede_editar %}
+                    <input type="date" name="fecha_implementacion" class="form-control" value="{{ plan.fecha_implementacion|date:'Y-m-d' }}" required>
+                    {% else %}
+                    <p>{{ plan.fecha_implementacion|date:"d/m/Y" }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label"><strong>5. Indicadores de Seguimiento</strong></label>
+                {% if puede_editar %}
+                <textarea name="indicadores_seguimiento" class="form-control" rows="4" required>{{ plan.indicadores_seguimiento }}</textarea>
+                {% else %}
+                <div class="border rounded p-3 bg-light">
+                    {{ plan.indicadores_seguimiento|linebreaks }}
+                </div>
+                {% endif %}
+
+                {% if plan.archivo_indicadores %}
+                <div class="mt-2 alert alert-info">
+                    <i class="bi bi-file-earmark-arrow-down"></i>
+                    <strong>Archivo adjunto:</strong>
+                    <a href="{{ plan.archivo_indicadores.url }}" target="_blank" class="alert-link ms-2">
+                        <i class="bi bi-download"></i> {{ plan.archivo_indicadores.name|split:'/'|last }}
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Otros Archivos Adjuntos -->
+    {% if plan.archivo_otros %}
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-file-earmark-plus"></i> Otros Archivos Adjuntos
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info mb-0">
+                <i class="bi bi-file-earmark-arrow-down"></i>
+                <strong>Archivo adjunto:</strong>
+                <a href="{{ plan.archivo_otros.url }}" target="_blank" class="alert-link ms-2">
+                    <i class="bi bi-download"></i> {{ plan.archivo_otros.name|split:'/'|last }}
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Archivos Adjuntos - Soporte (Siempre visible para proveedores) -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-paperclip"></i> Archivos Adjuntos - Soporte
+            </h5>
+        </div>
+        <div class="card-body">
+            <!-- Archivos actuales -->
+            {% if plan.adjuntos.all %}
+            <div class="mb-3">
+                <h6>Archivos adjuntos:</h6>
+                <div class="list-group mb-3">
+                    {% for adjunto in plan.adjuntos.all %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <span class="badge bg-primary me-2">{{ adjunto.get_tipo_documento_display }}</span>
+                                <a href="{{ adjunto.archivo.url }}" target="_blank" class="text-decoration-none">
+                                    <i class="bi bi-file-earmark-arrow-down"></i> {{ adjunto.nombre_original }}
+                                </a>
+                                {% if adjunto.descripcion %}
+                                <br><small class="text-muted">{{ adjunto.descripcion }}</small>
+                                {% endif %}
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted d-block">{{ adjunto.fecha_subida|date:"d/m/Y H:i" }}</small>
+                                <a href="{{ adjunto.archivo.url }}" class="btn btn-sm btn-outline-primary mt-1" download>
+                                    <i class="bi bi-download"></i> Descargar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Agregar nuevos archivos -->
+            {% if puede_adjuntar %}
+            <hr>
+            <h6>Agregar nuevos archivos:</h6>
+            <div id="archivos-container">
+                <div class="archivo-item border rounded p-3 mb-2 bg-light">
+                    <div class="row">
+                        <div class="col-md-5 mb-2">
+                            <label class="form-label"><small>Tipo de Documento</small></label>
+                            <select name="tipo_documento_1" class="form-select form-select-sm">
+                                <option value="PLAN_MEJORAMIENTO">Plan de Mejoramiento</option>
+                                <option value="ANALISIS_CAUSA_RAIZ">Análisis de Causa Raíz</option>
+                                <option value="OTRO">Otro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-7 mb-2">
+                            <label class="form-label"><small>Archivo</small></label>
+                            <input type="file"
+                                   name="archivo_1"
+                                   class="form-control form-control-sm"
+                                   accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label"><small>Descripción (opcional)</small></label>
+                        <input type="text"
+                               name="descripcion_1"
+                               class="form-control form-control-sm"
+                               placeholder="Descripción del archivo">
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="agregarArchivo()">
+                <i class="bi bi-plus"></i> Agregar otro archivo
+            </button>
+
+            <small class="d-block mt-2 text-muted">
+                Formatos permitidos: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG. Máximo 10MB por archivo.
+            </small>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No se pueden agregar más archivos adjuntos. El plan está en estado <strong>{{ plan.get_estado_display }}</strong>.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Botones de acción -->
+    {% if puede_editar %}
+    <div class="d-grid gap-2 mb-4">
+        {% if es_proveedor %}
+            {% if plan.estado == 'SOLICITUD_AJUSTES' %}
+            <button type="submit" class="btn btn-warning btn-lg" onclick="return confirm('¿Está seguro de enviar las correcciones? El plan pasará a revisión del técnico nuevamente.')">
+                <i class="bi bi-send"></i> Enviar Correcciones
+            </button>
+            {% else %}
+            <button type="submit" class="btn btn-success btn-lg" onclick="return confirm('¿Está seguro de enviar el plan de mejoramiento? Una vez enviado, pasará a revisión del técnico.')">
+                <i class="bi bi-send"></i> Enviar Plan
+            </button>
+            {% endif %}
+        {% else %}
+        <button type="submit" class="btn btn-primary btn-lg">
+            <i class="bi bi-save"></i> Guardar Cambios
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Opción de rechazo para el proveedor -->
+    {% if es_proveedor and plan.estado in 'BORRADOR,SOLICITUD_AJUSTES' %}
+    <div class="card border-danger mb-4">
+        <div class="card-header bg-danger text-white">
+            <h6 class="mb-0"><i class="bi bi-x-circle"></i> ¿No desea continuar con el proceso?</h6>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">Si no puede cumplir con los requisitos del plan de mejoramiento, puede rechazar el proceso. Esta acción es irreversible.</p>
+
+            <button type="button" class="btn btn-outline-danger" data-bs-toggle="collapse" data-bs-target="#collapseRechazo">
+                <i class="bi bi-x-circle"></i> Rechazar Plan de Mejoramiento
+            </button>
+
+            <div class="collapse mt-3" id="collapseRechazo">
+                <div class="alert alert-warning">
+                    <strong><i class="bi bi-exclamation-triangle"></i> Advertencia:</strong> Al rechazar el plan, el proceso finalizará y se radicará una cancelación formal.
+                </div>
+
+                <form method="post" onsubmit="return confirm('¿Está completamente seguro de rechazar el proceso? Esta acción NO se puede deshacer.')">
+                    {% csrf_token %}
+                    <input type="hidden" name="rechazar_plan" value="1">
+
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Motivo del rechazo (obligatorio):</strong></label>
+                        <textarea name="motivo_rechazo" class="form-control" rows="4" required
+                                  placeholder="Por favor, explique las razones por las cuales no puede continuar con el plan de mejoramiento..."></textarea>
+                        <small class="text-muted">Este motivo quedará registrado formalmente en el sistema.</small>
+                    </div>
+
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-x-circle"></i> Confirmar Rechazo del Proceso
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% elif puede_adjuntar %}
+    <div class="d-grid gap-2 mb-4">
+        <button type="submit" class="btn btn-primary btn-lg">
+            <i class="bi bi-upload"></i> Guardar Archivos Adjuntos
+        </button>
+    </div>
+    {% endif %}
+</form>
+
+<!-- Sección de Radicación de Cancelación (Solo para Técnicos/Gestores cuando el plan está RECHAZADO) -->
+{% if plan.estado == 'RECHAZADO' %}
+{% if es_tecnico or es_gestor %}
+<div class="card border-warning mb-4">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="bi bi-file-earmark-x"></i> Plan Rechazado por el Proveedor - Requiere Radicación</h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-danger mb-4">
+            <h6><i class="bi bi-x-circle"></i> El proveedor ha rechazado el proceso de mejoramiento</h6>
+        </div>
+
+        <!-- Subsección: Motivo del Rechazo -->
+        <div class="mb-4">
+            <h6 class="text-danger mb-3">
+                <i class="bi bi-chat-left-text"></i> Motivo del rechazo:
+            </h6>
+            <div class="p-3 bg-light border-start border-danger border-3 rounded">
+                {{ plan.comentarios_tecnico|linebreaks }}
+            </div>
+        </div>
+
+        <hr class="my-4">
+
+        <p class="mb-3"><strong>Como técnico responsable, debe radicar formalmente esta cancelación para finalizar el proceso.</strong></p>
+
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="radicar_cancelacion" value="1">
+
+            <div class="mb-3">
+                <label class="form-label"><strong>Observaciones de la radicación (opcional):</strong></label>
+                <textarea name="observaciones_cancelacion" class="form-control" rows="3"
+                          placeholder="Ingrese observaciones adicionales sobre la radicación de esta cancelación (número de radicado, fecha, etc.)..."></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-warning btn-lg" onclick="return confirm('¿Está seguro de radicar la cancelación? Esto finalizará el proceso de manera definitiva.')">
+                <i class="bi bi-file-earmark-check"></i> Radicar Cancelación
+            </button>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+
+<!-- Plan en estado de Cancelación Radicada (FIN DEL PROCESO) -->
+{% if plan.estado == 'CANCELACION_RADICADA' %}
+<div class="card border-dark mb-4">
+    <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="bi bi-x-circle-fill"></i> Proceso Finalizado - Cancelación Radicada</h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-dark mb-3">
+            <h6><i class="bi bi-check2-circle"></i> La cancelación ha sido radicada exitosamente</h6>
+            <hr>
+            <p class="mb-2"><strong>Estado final:</strong> <span class="badge bg-dark">CANCELACIÓN RADICADA</span></p>
+            <p class="mb-0">El proceso de mejoramiento ha finalizado. No se requieren más acciones.</p>
+        </div>
+
+        {% if plan.comentarios_tecnico %}
+        <div class="alert alert-secondary">
+            <h6><i class="bi bi-info-circle"></i> Información del proceso:</h6>
+            <hr>
+            <p class="mb-0">{{ plan.comentarios_tecnico|linebreaks }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Plan en estado de No Recibido (FIN DEL PROCESO) -->
+{% if plan.estado == 'NO_RECIBIDO' %}
+<div class="card border-secondary mb-4">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0"><i class="bi bi-clock-history"></i> Proceso Finalizado - Plan No Recibido</h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-secondary mb-3">
+            <h6><i class="bi bi-clock-history"></i> El proceso ha finalizado por vencimiento del plazo</h6>
+            <hr>
+            <p class="mb-2"><strong>Estado final:</strong> <span class="badge bg-secondary">NO RECIBIDO</span></p>
+            <p class="mb-0">El proveedor no envió el plan de mejoramiento dentro del plazo establecido. El proceso ha finalizado.</p>
+        </div>
+
+        {% if plan.comentarios_tecnico %}
+        <div class="alert alert-light">
+            <h6><i class="bi bi-info-circle"></i> Información del vencimiento:</h6>
+            <hr>
+            <p class="mb-0">{{ plan.comentarios_tecnico|linebreaks }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Acciones de Mejora Detalladas -->
+{% if acciones %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-list-check"></i> Acciones de Mejora Específicas
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Acción</th>
+                        <th>Responsable</th>
+                        <th>Fecha Compromiso</th>
+                        <th>Indicador</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for accion in acciones %}
+                    <tr>
+                        <td>{{ accion.descripcion }}</td>
+                        <td>{{ accion.responsable }}</td>
+                        <td>{{ accion.fecha_compromiso|date:"d/m/Y" }}</td>
+                        <td>{{ accion.indicador }}</td>
+                        <td>
+                            {% if accion.completado %}
+                                <span class="badge bg-success">Completado</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Pendiente</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Archivos Adjuntos (Soporte) -->
+{% if plan.adjuntos.all %}
+<div class="card mb-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0">
+            <i class="bi bi-paperclip"></i> Archivos Adjuntos - Soporte
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="list-group">
+            {% for adjunto in plan.adjuntos.all %}
+            <div class="list-group-item">
+                <div class="d-flex w-100 justify-content-between align-items-start">
+                    <div class="me-auto">
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="badge bg-primary me-2">{{ adjunto.get_tipo_documento_display }}</span>
+                            <h6 class="mb-0">
+                                <i class="bi bi-file-earmark-arrow-down"></i>
+                                <a href="{{ adjunto.archivo.url }}" target="_blank" class="text-decoration-none">
+                                    {{ adjunto.nombre_original }}
+                                </a>
+                            </h6>
+                        </div>
+                        {% if adjunto.descripcion %}
+                        <p class="mb-1 text-muted small">{{ adjunto.descripcion }}</p>
+                        {% endif %}
+                        <small class="text-muted">
+                            Subido por: {{ adjunto.subido_por.get_full_name|default:adjunto.subido_por.username }}
+                            el {{ adjunto.fecha_subida|date:"d/m/Y H:i" }}
+                        </small>
+                    </div>
+                    <a href="{{ adjunto.archivo.url }}" class="btn btn-sm btn-outline-primary" download>
+                        <i class="bi bi-download"></i>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Historial de Cambios en Campos -->
+{% if historial_cambios_campos %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history"></i> Historial de Cambios
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">
+                    <small>Registro de modificaciones realizadas en los campos del plan de mejoramiento.</small>
+                </p>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="15%">Fecha</th>
+                                <th width="15%">Usuario</th>
+                                <th width="20%">Campo</th>
+                                <th width="25%">Valor Anterior</th>
+                                <th width="25%">Valor Nuevo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cambio in historial_cambios_campos %}
+                            <tr>
+                                <td>
+                                    <small>{{ cambio.fecha_cambio|date:"d/m/Y" }}<br>
+                                    {{ cambio.fecha_cambio|date:"H:i" }}</small>
+                                </td>
+                                <td>
+                                    <small>
+                                        {% if cambio.usuario %}
+                                            {{ cambio.usuario.get_full_name|default:cambio.usuario.username }}
+                                        {% else %}
+                                            <em class="text-muted">Sistema</em>
+                                        {% endif %}
+                                    </small>
+                                </td>
+                                <td>
+                                    <small><strong>{{ cambio.campo }}</strong></small>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {% if cambio.valor_anterior %}
+                                            {% if cambio.valor_anterior|length > 100 %}
+                                                {{ cambio.valor_anterior|truncatewords:15 }}
+                                            {% else %}
+                                                {{ cambio.valor_anterior }}
+                                            {% endif %}
+                                        {% else %}
+                                            <em>(vacío)</em>
+                                        {% endif %}
+                                    </small>
+                                </td>
+                                <td>
+                                    <small class="text-success">
+                                        {% if cambio.valor_nuevo %}
+                                            {% if cambio.valor_nuevo|length > 100 %}
+                                                {{ cambio.valor_nuevo|truncatewords:15 }}
+                                            {% else %}
+                                                {{ cambio.valor_nuevo }}
+                                            {% endif %}
+                                        {% else %}
+                                            <em>(vacío)</em>
+                                        {% endif %}
+                                    </small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if plan.historial_cambios_campos.count > 20 %}
+                <div class="alert alert-info py-2 px-3 mb-0 mt-2">
+                    <small>
+                        <i class="bi bi-info-circle"></i>
+                        Mostrando los últimos 20 cambios de {{ plan.historial_cambios_campos.count }} cambios totales.
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="mt-4">
+    {% if es_proveedor %}
+    <a href="{% url 'dashboard_proveedor' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Volver al Dashboard
+    </a>
+    {% else %}
+    <a href="{% url 'tecnico_panel' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Volver al Panel
+    </a>
+    {% endif %}
+</div>
+
+<script>
+let contadorArchivos = 1;
+
+function agregarArchivo() {
+    contadorArchivos++;
+    const container = document.getElementById('archivos-container');
+    const div = document.createElement('div');
+    div.className = 'archivo-item border rounded p-3 mb-2 bg-light';
+    div.innerHTML = `
+        <div class="d-flex justify-content-between mb-2">
+            <h6 class="mb-0"><small>Archivo ${contadorArchivos}</small></h6>
+            <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.parentElement.remove()">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+        <div class="row">
+            <div class="col-md-5 mb-2">
+                <label class="form-label"><small>Tipo de Documento</small></label>
+                <select name="tipo_documento_${contadorArchivos}" class="form-select form-select-sm">
+                    <option value="PLAN_MEJORAMIENTO">Plan de Mejoramiento</option>
+                    <option value="ANALISIS_CAUSA_RAIZ">Análisis de Causa Raíz</option>
+                    <option value="OTRO">Otro</option>
+                </select>
+            </div>
+            <div class="col-md-7 mb-2">
+                <label class="form-label"><small>Archivo</small></label>
+                <input type="file"
+                       name="archivo_${contadorArchivos}"
+                       class="form-control form-control-sm"
+                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png">
+            </div>
+        </div>
+        <div>
+            <label class="form-label"><small>Descripción (opcional)</small></label>
+            <input type="text"
+                   name="descripcion_${contadorArchivos}"
+                   class="form-control form-control-sm"
+                   placeholder="Descripción del archivo">
+        </div>
+    `;
+    container.appendChild(div);
+}
+</script>
+{% endblock %}
