@@ -647,6 +647,7 @@ class Notificacion(models.Model):
         ('PLAN_APROBADO', 'Plan Aprobado'),
         ('PLAN_RECHAZADO', 'Plan Rechazado'),
         ('PLAN_REQUIERE_AJUSTES', 'Plan Requiere Ajustes'),
+        ('PLAN_REEVALUADO', 'Plan Reevaluado'),
     ]
 
     usuario = models.ForeignKey(

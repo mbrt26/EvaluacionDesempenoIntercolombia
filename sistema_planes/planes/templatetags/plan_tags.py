@@ -35,7 +35,7 @@ def puntaje_badge(puntaje):
             return 'puntaje-aceptable'
         else:
             return 'puntaje-critico'
-    except:
+    except (ValueError, TypeError):
         return 'puntaje-aceptable'
 
 
@@ -50,7 +50,7 @@ def puntaje_color(puntaje):
             return 'text-warning'
         else:
             return 'text-danger'
-    except:
+    except (ValueError, TypeError):
         return 'text-secondary'
 
 
@@ -81,7 +81,7 @@ def multiply(value, arg):
     """Multiplica el valor por el argumento"""
     try:
         return float(value) * float(arg)
-    except:
+    except (ValueError, TypeError):
         return 0
 
 
@@ -92,7 +92,7 @@ def percentage(value, total):
         if total == 0:
             return 0
         return int((float(value) / float(total)) * 100)
-    except:
+    except (ValueError, TypeError, ZeroDivisionError):
         return 0
 
 
@@ -139,5 +139,5 @@ def add_days(date_value, days):
 
         # Sumar los días
         return date_value + timedelta(days=days)
-    except:
+    except (ValueError, TypeError):
         return date_value
