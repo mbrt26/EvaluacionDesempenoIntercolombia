@@ -151,7 +151,7 @@ def dashboard_estadisticas(request):
     for estado, total in estados_dict.items():
         try:
             labels_estados.append(dict(PlanMejoramiento.ESTADOS).get(estado, estado))
-        except:
+        except Exception:
             labels_estados.append(estado)
         data_estados.append(total)
         colors_estados.append(colores_estados.get(estado, '#6c757d'))

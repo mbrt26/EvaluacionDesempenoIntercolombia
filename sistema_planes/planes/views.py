@@ -73,7 +73,7 @@ def dashboard_proveedor(request):
     """Dashboard principal del proveedor"""
     try:
         proveedor = request.user.proveedor
-    except:
+    except (Proveedor.DoesNotExist, AttributeError):
         messages.error(request, 'No tiene permisos de proveedor')
         return redirect('login')
 
@@ -468,6 +468,11 @@ Intercolombia S.A. E.S.P.
                         evaluacion=evaluacion,
                         proveedor=evaluacion.proveedor,
                         estado='NO_RECIBIDO',
+                        analisis_causa='PLAN NO RECIBIDO - Plazo vencido',
+                        acciones_propuestas='No aplica - Plan no presentado por el proveedor',
+                        responsable=evaluacion.proveedor.razon_social,
+                        fecha_implementacion=date.today(),
+                        indicadores_seguimiento='No aplica - Plan no presentado',
                         comentarios_tecnico=info_vencimiento
                     )
                 else:
@@ -607,7 +612,10 @@ Intercolombia S.A. E.S.P.
             evaluacion=evaluacion,
             proveedor=evaluacion.proveedor,
             estado='BORRADOR',
-            fecha_creacion=timezone.now(),
+            analisis_causa='',  # Será completado por el proveedor
+            acciones_propuestas='',  # Será completado por el proveedor
+            responsable='',  # Será completado por el proveedor
+            indicadores_seguimiento='',  # Será completado por el proveedor
             fecha_implementacion=fecha_implementacion_default
         )
         messages.info(request, 'Se ha creado automáticamente un plan de mejoramiento en estado BORRADOR para que el proveedor pueda completarlo.')
@@ -655,7 +663,7 @@ def crear_plan(request):
     """Vista para crear un nuevo plan de mejoramiento"""
     try:
         proveedor = request.user.proveedor
-    except:
+    except (Proveedor.DoesNotExist, AttributeError):
         messages.error(request, 'No tiene permisos de proveedor')
         return redirect('login')
     
@@ -1045,7 +1053,7 @@ def ver_plan(request, plan_id):
                         usuario=request.user,
                         comentario=comentario
                     )
-                except:
+                except Exception:
                     pass
 
             # Mensajes y redirección según el cambio de estado
@@ -1093,7 +1101,7 @@ def editar_plan(request, plan_id):
             proveedor=proveedor,
             estado__in=['BORRADOR', 'REQUIERE_AJUSTES', 'FIRMADO_ENVIADO']
         )
-    except:
+    except (Proveedor.DoesNotExist, AttributeError, Exception):
         messages.error(request, 'No puede editar este plan')
         return redirect('proveedor_dashboard')
     
@@ -1686,7 +1694,7 @@ def dashboard_analytics(request):
         try:
             fecha_mes = datetime.strptime(m, '%Y-%m')
             meses_labels_formatted.append(fecha_mes.strftime('%b %Y'))
-        except:
+        except ValueError:
             meses_labels_formatted.append(m)
 
     # ========== TOP 5 EVALUACIONES ACEPTABLES Y CRÍTICAS ==========
