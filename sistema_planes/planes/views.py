@@ -139,11 +139,20 @@ def ver_evaluacion(request, evaluacion_id):
         es_gestor = False
         es_tecnico = False
     else:
-        # Si es técnico o gestor, puede ver cualquier evaluación
-        evaluacion = get_object_or_404(Evaluacion, id=evaluacion_id)
         # Verificar si es gestor o técnico
         es_gestor = hasattr(request.user, 'perfil') and request.user.perfil.es_gestor
         es_tecnico = hasattr(request.user, 'perfil') and request.user.perfil.es_tecnico
+
+        if es_gestor:
+            # Gestor puede ver cualquier evaluación
+            evaluacion = get_object_or_404(Evaluacion, id=evaluacion_id)
+        else:
+            # Técnico solo puede ver evaluaciones asignadas a él
+            evaluacion = get_object_or_404(
+                Evaluacion,
+                id=evaluacion_id,
+                tecnico_asignado=request.user
+            )
 
     # Obtener el plan asociado si existe
     plan = evaluacion.planes.first()
@@ -780,12 +789,22 @@ def ver_plan(request, plan_id):
         es_gestor = False
         es_tecnico = False
     else:
-        # Si es técnico o gestor, puede ver cualquier plan
-        plan = get_object_or_404(PlanMejoramiento, id=plan_id)
-        proveedor = plan.proveedor
         # Verificar si es gestor o técnico
         es_gestor = hasattr(request.user, 'perfil') and request.user.perfil.es_gestor
         es_tecnico = hasattr(request.user, 'perfil') and request.user.perfil.es_tecnico
+
+        if es_gestor:
+            # Gestor puede ver cualquier plan
+            plan = get_object_or_404(PlanMejoramiento, id=plan_id)
+        else:
+            # Técnico solo puede ver planes de evaluaciones asignadas a él
+            plan = get_object_or_404(
+                PlanMejoramiento,
+                id=plan_id,
+                evaluacion__tecnico_asignado=request.user
+            )
+
+        proveedor = plan.proveedor
         # Administradores pueden editar planes en BORRADOR y SOLICITUD_AJUSTES
         puede_editar = plan.estado in ['BORRADOR', 'REQUIERE_AJUSTES', 'SOLICITUD_AJUSTES']
         puede_adjuntar = plan.estado not in ['APROBADO', 'RECHAZADO']
@@ -1204,8 +1223,19 @@ def panel_tecnico(request):
         messages.error(request, 'No tiene permisos de técnico')
         return redirect('proveedor_dashboard')
 
-    # Obtener todas las evaluaciones
-    evaluaciones = Evaluacion.objects.all().select_related('proveedor')
+    # Determinar si es gestor o técnico
+    es_gestor = hasattr(request.user, 'perfil') and request.user.perfil.es_gestor
+    es_tecnico = hasattr(request.user, 'perfil') and request.user.perfil.es_tecnico
+
+    # Obtener evaluaciones según el rol
+    if es_gestor:
+        # Gestor ve todas las evaluaciones
+        evaluaciones = Evaluacion.objects.all().select_related('proveedor')
+    else:
+        # Técnico solo ve evaluaciones asignadas a él
+        evaluaciones = Evaluacion.objects.filter(
+            tecnico_asignado=request.user
+        ).select_related('proveedor')
 
     # Aplicar filtros
     filtro_proveedor = request.GET.get('proveedor', '')
@@ -1239,13 +1269,23 @@ def panel_tecnico(request):
 
     evaluaciones = evaluaciones.order_by('fecha')
 
-    # Estadísticas generales (sin filtros)
-    todas_evaluaciones = Evaluacion.objects.all()
+    # Estadísticas generales (según rol)
+    if es_gestor:
+        todas_evaluaciones = Evaluacion.objects.all()
+    else:
+        # Técnico solo ve estadísticas de sus evaluaciones asignadas
+        todas_evaluaciones = Evaluacion.objects.filter(tecnico_asignado=request.user)
     total_evaluaciones = todas_evaluaciones.count()
     promedio_puntaje = todas_evaluaciones.aggregate(Avg('puntaje'))['puntaje__avg'] or 0
 
-    # Obtener todos los planes
-    planes = PlanMejoramiento.objects.all().select_related('proveedor', 'evaluacion')
+    # Obtener planes según el rol
+    if es_gestor:
+        planes = PlanMejoramiento.objects.all().select_related('proveedor', 'evaluacion')
+    else:
+        # Técnico solo ve planes de evaluaciones asignadas a él
+        planes = PlanMejoramiento.objects.filter(
+            evaluacion__tecnico_asignado=request.user
+        ).select_related('proveedor', 'evaluacion')
 
     # Aplicar filtros a planes
     filtro_plan_proveedor = request.GET.get('plan_proveedor', '')
@@ -1270,8 +1310,14 @@ def panel_tecnico(request):
 
     planes = planes.order_by('fecha_creacion')
 
-    # Total de planes sin filtros
-    todos_planes = PlanMejoramiento.objects.all()
+    # Total de planes según rol (sin filtros adicionales)
+    if es_gestor:
+        todos_planes = PlanMejoramiento.objects.all()
+    else:
+        # Técnico solo ve planes de evaluaciones asignadas a él
+        todos_planes = PlanMejoramiento.objects.filter(
+            evaluacion__tecnico_asignado=request.user
+        )
     total_planes = todos_planes.count()
 
     # Planes por estado (sin filtros)
@@ -1537,12 +1583,22 @@ def dashboard_analytics(request):
         messages.error(request, 'No tiene permisos para acceder a este dashboard')
         return redirect('proveedor_dashboard')
 
+    # Determinar rol del usuario
+    es_gestor = hasattr(request.user, 'perfil') and request.user.perfil.es_gestor
+    es_gestor_compras = hasattr(request.user, 'perfil') and request.user.perfil.es_gestor_compras
+    es_tecnico = hasattr(request.user, 'perfil') and request.user.perfil.es_tecnico
+
     # ========== OBTENER FILTROS ==========
     filtro_proveedor = request.GET.get('proveedor', '')
     filtro_documento = request.GET.get('documento', '')
 
     # ========== APLICAR FILTROS A EVALUACIONES ==========
-    evaluaciones_filtradas = Evaluacion.objects.all()
+    # Gestores ven todo, técnicos solo sus evaluaciones asignadas
+    if es_gestor or es_gestor_compras:
+        evaluaciones_filtradas = Evaluacion.objects.all()
+    else:
+        # Técnico solo ve evaluaciones asignadas a él
+        evaluaciones_filtradas = Evaluacion.objects.filter(tecnico_asignado=request.user)
 
     if filtro_proveedor:
         evaluaciones_filtradas = evaluaciones_filtradas.filter(
@@ -1557,7 +1613,12 @@ def dashboard_analytics(request):
         )
 
     # ========== ESTADÍSTICAS GENERALES ==========
-    total_proveedores = Proveedor.objects.filter(activo=True).count()
+    # Total de proveedores según rol
+    if es_gestor or es_gestor_compras:
+        total_proveedores = Proveedor.objects.filter(activo=True).count()
+    else:
+        # Técnico: contar proveedores únicos de sus evaluaciones asignadas
+        total_proveedores = evaluaciones_filtradas.values('proveedor').distinct().count()
     total_evaluaciones = evaluaciones_filtradas.count()
 
     # Aplicar filtros a planes relacionados con las evaluaciones filtradas
@@ -1565,7 +1626,11 @@ def dashboard_analytics(request):
         evaluaciones_ids = evaluaciones_filtradas.values_list('id', flat=True)
         planes_filtrados = PlanMejoramiento.objects.filter(evaluacion_id__in=evaluaciones_ids)
     else:
-        planes_filtrados = PlanMejoramiento.objects.all()
+        # Gestores ven todos los planes, técnicos solo planes de sus evaluaciones
+        if es_gestor or es_gestor_compras:
+            planes_filtrados = PlanMejoramiento.objects.all()
+        else:
+            planes_filtrados = PlanMejoramiento.objects.filter(evaluacion__tecnico_asignado=request.user)
 
     total_planes = planes_filtrados.count()
 
@@ -1687,9 +1752,17 @@ def dashboard_analytics(request):
                 planes_por_vencer.append(plan)
 
     # ========== ACTIVIDAD RECIENTE ==========
-    actividad_reciente = HistorialEstado.objects.select_related(
-        'plan__proveedor', 'usuario'
-    ).order_by('-fecha_cambio')[:10]
+    if es_gestor or es_gestor_compras:
+        actividad_reciente = HistorialEstado.objects.select_related(
+            'plan__proveedor', 'usuario'
+        ).order_by('-fecha_cambio')[:10]
+    else:
+        # Técnico: solo actividad de planes de sus evaluaciones
+        actividad_reciente = HistorialEstado.objects.filter(
+            plan__evaluacion__tecnico_asignado=request.user
+        ).select_related(
+            'plan__proveedor', 'usuario'
+        ).order_by('-fecha_cambio')[:10]
 
     # ========== PREPARAR DATOS PARA JSON (CHARTS) ==========
     context = {

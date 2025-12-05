@@ -54,10 +54,14 @@
                             <td><strong>N° Contrato:</strong></td>
                             <td>{{ evaluacion.numero_contrato|default:"—" }}</td>
                         </tr>
+                        <tr>
+                            <td><strong>Sociedad:</strong></td>
+                            <td>{{ evaluacion.sociedad|default:"—" }}</td>
+                        </tr>
                         {% if not es_proveedor %}
                         <tr>
                             <td><strong>Tipo de Contrato:</strong></td>
-                            <td>{{ evaluacion.get_tipo_contrato_display|default:"—" }}</td>
+                            <td>{{ evaluacion.tipo_contrato|default:"—" }}</td>
                         </tr>
                         {% endif %}
                         <tr>
@@ -66,6 +70,146 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Criterios de Evaluación (evaluados) -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-table"></i> Criterios de Evaluación (evaluados)</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Cada criterio se evalúa según su peso específico. Total máximo: 100 puntos</p>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 30%;">Criterio</th>
+                                <th style="width: 15%;" class="text-center">Puntaje</th>
+                                <th style="width: 15%;" class="text-center">Máximo</th>
+                                <th style="width: 40%;">Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Gestión -->
+                            {% if evaluacion.puntaje_gestion is not None %}
+                            <tr>
+                                <td>
+                                    <i class="bi bi-folder2-open text-primary"></i> <strong>Gestión</strong>
+                                    <br><small class="text-muted">Gestión administrativa y documental</small>
+                                </td>
+                                <td class="text-center">{{ evaluacion.puntaje_gestion|floatformat:2 }}</td>
+                                <td class="text-center">{{ evaluacion.max_gestion|default:25 }}</td>
+                                <td><small>{{ evaluacion.observaciones_gestion|default:"-" }}</small></td>
+                            </tr>
+                            {% endif %}
+                            <!-- Calidad -->
+                            {% if evaluacion.puntaje_calidad is not None %}
+                            <tr>
+                                <td>
+                                    <i class="bi bi-star text-warning"></i> <strong>Calidad</strong>
+                                    <br><small class="text-muted">Calidad del producto/servicio</small>
+                                </td>
+                                <td class="text-center">{{ evaluacion.puntaje_calidad|floatformat:2 }}</td>
+                                <td class="text-center">{{ evaluacion.max_calidad|default:25 }}</td>
+                                <td><small>{{ evaluacion.observaciones_calidad|default:"-" }}</small></td>
+                            </tr>
+                            {% endif %}
+                            <!-- Oportunidad -->
+                            {% if evaluacion.puntaje_oportunidad is not None %}
+                            <tr>
+                                <td>
+                                    <i class="bi bi-clock text-info"></i> <strong>Oportunidad</strong>
+                                    <br><small class="text-muted">Cumplimiento de tiempos y plazos</small>
+                                </td>
+                                <td class="text-center">{{ evaluacion.puntaje_oportunidad|floatformat:2 }}</td>
+                                <td class="text-center">{{ evaluacion.max_oportunidad|default:25 }}</td>
+                                <td><small>{{ evaluacion.observaciones_oportunidad|default:"-" }}</small></td>
+                            </tr>
+                            {% endif %}
+                            <!-- Ambiental y Social -->
+                            {% if evaluacion.puntaje_ambiental_social and evaluacion.puntaje_ambiental_social > 0 %}
+                            <tr>
+                                <td>
+                                    <i class="bi bi-tree text-success"></i> <strong>Ambiental y Social</strong>
+                                    <br><small class="text-muted">Cumplimiento ambiental y responsabilidad social</small>
+                                </td>
+                                <td class="text-center">{{ evaluacion.puntaje_ambiental_social|floatformat:2 }}</td>
+                                <td class="text-center">{{ evaluacion.max_ambiental_social|default:25 }}</td>
+                                <td><small>{{ evaluacion.observaciones_ambiental_social|default:"-" }}</small></td>
+                            </tr>
+                            {% endif %}
+                            <!-- SST -->
+                            {% if evaluacion.puntaje_sst and evaluacion.puntaje_sst > 0 %}
+                            <tr>
+                                <td>
+                                    <i class="bi bi-shield-check text-danger"></i> <strong>SST</strong>
+                                    <br><small class="text-muted">Seguridad y Salud en el Trabajo</small>
+                                </td>
+                                <td class="text-center">{{ evaluacion.puntaje_sst|floatformat:2 }}</td>
+                                <td class="text-center">{{ evaluacion.max_sst|default:25 }}</td>
+                                <td><small>{{ evaluacion.observaciones_sst|default:"-" }}</small></td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                        <tfoot class="table-primary">
+                            <tr>
+                                <td><strong>TOTAL</strong></td>
+                                <td class="text-center"><strong>{{ evaluacion.puntaje|floatformat:2 }}</strong></td>
+                                <td class="text-center"><strong>100</strong></td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- Estado de la evaluación -->
+                <div class="text-center mt-3">
+                    {% if evaluacion.puntaje >= 80 %}
+                    <span class="badge bg-success fs-5 p-2">DESEMPEÑO SATISFACTORIO</span>
+                    {% elif evaluacion.puntaje >= 60 %}
+                    <span class="badge bg-warning text-dark fs-5 p-2">DESEMPEÑO ACEPTABLE</span>
+                    {% else %}
+                    <span class="badge bg-danger fs-5 p-2">DESEMPEÑO CRÍTICO</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Observaciones -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-chat-left-text"></i> Observaciones del Técnico</h5>
+            </div>
+            <div class="card-body">
+                {% if evaluacion.observaciones_tecnico %}
+                <p>{{ evaluacion.observaciones_tecnico|linebreaks }}</p>
+                {% else %}
+                <p class="text-muted">Sin observaciones del técnico.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-journal-text"></i> Observaciones Generales</h5>
+            </div>
+            <div class="card-body">
+                {% if evaluacion.observaciones_generales %}
+                <p>{{ evaluacion.observaciones_generales|linebreaks }}</p>
+                {% else %}
+                <p class="text-muted">Sin observaciones generales.</p>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -95,7 +239,8 @@
     </div>
     <div class="card-body">
         <div class="timeline">
-            <!-- Etapa 1: Generación de Evaluación -->
+            {% if not es_proveedor %}
+            <!-- Etapa 1: Generación de Evaluación (Solo visible para técnicos/gestores) -->
             <div class="timeline-item completed">
                 <div class="timeline-marker">
                     <i class="bi bi-check-circle-fill text-success"></i>
@@ -122,8 +267,12 @@
                                 <strong>{{ evaluacion.proveedor.razon_social }}</strong>
                             </div>
                             <div class="col-md-6">
+                                <small class="text-muted">Sociedad:</small><br>
+                                <strong>{{ evaluacion.sociedad|default:"—" }}</strong>
+                            </div>
+                            <div class="col-md-6">
                                 <small class="text-muted">Tipo de Contrato:</small><br>
-                                <strong>{{ evaluacion.get_tipo_contrato_display|default:"—" }}</strong>
+                                <strong>{{ evaluacion.tipo_contrato|default:"—" }}</strong>
                             </div>
                             <div class="col-md-6">
                                 <small class="text-muted">N° Contrato/Orden:</small><br>
@@ -151,7 +300,7 @@
                 </div>
             </div>
 
-            <!-- Etapa 2: Proceso de Firmas -->
+            <!-- Etapa 2: Proceso de Firmas (Solo visible para técnicos/gestores) -->
             <div class="timeline-item completed">
                 <div class="timeline-marker">
                     <i class="bi bi-check-circle-fill text-success"></i>
@@ -215,6 +364,7 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
 
             <!-- Etapa 3: Firmado y Enviado -->
             <div class="timeline-item completed">
@@ -692,7 +842,7 @@
             {% endif %}
 
             <!-- Etapa 5: Carga del Plan de Mejoramiento -->
-            {% if plan and plan.estado in 'BORRADOR,ENVIADO,SOLICITUD_AJUSTES,PM_REEVALUADO' and evaluacion.fecha_cambio_estado_flujo and dias_sin_plan < 30 %}
+            {% if plan and plan.estado in 'BORRADOR,ENVIADO,SOLICITUD_AJUSTES,PM_REEVALUADO' and evaluacion.fecha_cambio_estado_flujo %}
                 {% if evaluacion.estado_flujo_evaluacion == 'FLUJO_NORMAL' or evaluacion.estado_flujo_evaluacion == 'REEVALUADO' and evaluacion.puntaje_reevaluacion < 80 %}
             <div class="timeline-item {% if plan.estado == 'ENVIADO' %}completed{% endif %}">
                 <div class="timeline-marker">
@@ -1367,6 +1517,18 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Botón para que el proveedor cargue su plan -->
+                            {% if es_proveedor %}
+                            <div class="mt-3 text-center">
+                                <a href="{% url 'proveedor_crear_plan' %}" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-upload"></i> Cargar Plan de Mejoramiento
+                                </a>
+                                <p class="text-muted mt-2 mb-0">
+                                    <small><i class="bi bi-info-circle"></i> Haga clic para iniciar la carga de su plan de mejoramiento</small>
+                                </p>
+                            </div>
+                            {% endif %}
 
                             {% if dias_sin_plan >= 25 %}
                             <div class="alert alert-danger mt-3 mb-0">

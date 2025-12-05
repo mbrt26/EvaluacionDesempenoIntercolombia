@@ -41,10 +41,10 @@
     </div>
 </div>
 
-<!-- Información del Proveedor -->
+<!-- Información del Proveedor y Resumen de Evaluaciones -->
 <div class="row mb-4">
     <div class="col-md-6">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0"><i class="bi bi-building"></i> Información del Proveedor</h5>
             </div>
@@ -74,61 +74,18 @@
             </div>
         </div>
     </div>
-
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Estadísticas Generales</h5>
-            </div>
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-6 mb-3">
-                        <div class="stat-number text-primary">{{ estadisticas.total_evaluaciones }}</div>
-                        <div class="stat-label">Evaluaciones</div>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <div class="stat-number {% if estadisticas.promedio_puntaje >= 80 %}text-success{% elif estadisticas.promedio_puntaje >= 60 %}text-warning{% else %}text-danger{% endif %}">
-                            {{ estadisticas.promedio_puntaje }}
-                        </div>
-                        <div class="stat-label">Prom. Puntaje</div>
-                    </div>
-                    <div class="col-6">
-                        <div class="stat-number text-info">{{ estadisticas.total_planes }}</div>
-                        <div class="stat-label">Planes Totales</div>
-                    </div>
-                    <div class="col-6">
-                        <div class="stat-number text-success">{{ estadisticas.planes_aprobados }}</div>
-                        <div class="stat-label">Planes Aprobados</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Resumen de Evaluaciones -->
-<div class="row mb-4">
-    <div class="col-md-4">
-        <div class="card stat-card green">
-            <div class="card-body text-center">
-                <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
-                <div class="stat-number text-success">{{ estadisticas.evaluaciones_satisfactorias }}</div>
-                <div class="stat-label">Satisfactorias (≥80)</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card stat-card orange">
-            <div class="card-body text-center">
+    <div class="col-md-3">
+        <div class="card stat-card orange h-100">
+            <div class="card-body text-center d-flex flex-column justify-content-center">
                 <i class="bi bi-exclamation-circle text-warning" style="font-size: 3rem;"></i>
                 <div class="stat-number text-warning">{{ estadisticas.evaluaciones_aceptables }}</div>
                 <div class="stat-label">Aceptables (60-79)</div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card stat-card red">
-            <div class="card-body text-center">
+    <div class="col-md-3">
+        <div class="card stat-card red h-100">
+            <div class="card-body text-center d-flex flex-column justify-content-center">
                 <i class="bi bi-x-circle text-danger" style="font-size: 3rem;"></i>
                 <div class="stat-number text-danger">{{ estadisticas.evaluaciones_criticas }}</div>
                 <div class="stat-label">Críticas (<60)</div>

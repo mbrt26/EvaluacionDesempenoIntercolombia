@@ -357,44 +357,6 @@
         </button>
         {% endif %}
     </div>
-
-    <!-- Opción de rechazo para el proveedor -->
-    {% if es_proveedor and plan.estado in 'BORRADOR,SOLICITUD_AJUSTES' %}
-    <div class="card border-danger mb-4">
-        <div class="card-header bg-danger text-white">
-            <h6 class="mb-0"><i class="bi bi-x-circle"></i> ¿No desea continuar con el proceso?</h6>
-        </div>
-        <div class="card-body">
-            <p class="text-muted mb-3">Si no puede cumplir con los requisitos del plan de mejoramiento, puede rechazar el proceso. Esta acción es irreversible.</p>
-
-            <button type="button" class="btn btn-outline-danger" data-bs-toggle="collapse" data-bs-target="#collapseRechazo">
-                <i class="bi bi-x-circle"></i> Rechazar Plan de Mejoramiento
-            </button>
-
-            <div class="collapse mt-3" id="collapseRechazo">
-                <div class="alert alert-warning">
-                    <strong><i class="bi bi-exclamation-triangle"></i> Advertencia:</strong> Al rechazar el plan, el proceso finalizará y se radicará una cancelación formal.
-                </div>
-
-                <form method="post" onsubmit="return confirm('¿Está completamente seguro de rechazar el proceso? Esta acción NO se puede deshacer.')">
-                    {% csrf_token %}
-                    <input type="hidden" name="rechazar_plan" value="1">
-
-                    <div class="mb-3">
-                        <label class="form-label"><strong>Motivo del rechazo (obligatorio):</strong></label>
-                        <textarea name="motivo_rechazo" class="form-control" rows="4" required
-                                  placeholder="Por favor, explique las razones por las cuales no puede continuar con el plan de mejoramiento..."></textarea>
-                        <small class="text-muted">Este motivo quedará registrado formalmente en el sistema.</small>
-                    </div>
-
-                    <button type="submit" class="btn btn-danger">
-                        <i class="bi bi-x-circle"></i> Confirmar Rechazo del Proceso
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-    {% endif %}
     {% elif puede_adjuntar %}
     <div class="d-grid gap-2 mb-4">
         <button type="submit" class="btn btn-primary btn-lg">
@@ -403,6 +365,44 @@
     </div>
     {% endif %}
 </form>
+
+<!-- Opción de rechazo para el proveedor (FUERA del formulario principal) -->
+{% if es_proveedor and plan.estado in 'BORRADOR,SOLICITUD_AJUSTES' %}
+<div class="card border-danger mb-4">
+    <div class="card-header bg-danger text-white">
+        <h6 class="mb-0"><i class="bi bi-x-circle"></i> ¿No desea continuar con el proceso?</h6>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">Si no puede cumplir con los requisitos del plan de mejoramiento, puede rechazar el proceso. Esta acción es irreversible.</p>
+
+        <button type="button" class="btn btn-outline-danger" data-bs-toggle="collapse" data-bs-target="#collapseRechazo">
+            <i class="bi bi-x-circle"></i> Rechazar Plan de Mejoramiento
+        </button>
+
+        <div class="collapse mt-3" id="collapseRechazo">
+            <div class="alert alert-warning">
+                <strong><i class="bi bi-exclamation-triangle"></i> Advertencia:</strong> Al rechazar el plan, el proceso finalizará y se radicará una cancelación formal.
+            </div>
+
+            <form method="post" onsubmit="return confirm('¿Está completamente seguro de rechazar el proceso? Esta acción NO se puede deshacer.')">
+                {% csrf_token %}
+                <input type="hidden" name="rechazar_plan" value="1">
+
+                <div class="mb-3">
+                    <label class="form-label"><strong>Motivo del rechazo (obligatorio):</strong></label>
+                    <textarea name="motivo_rechazo" class="form-control" rows="4" required
+                              placeholder="Por favor, explique las razones por las cuales no puede continuar con el plan de mejoramiento..."></textarea>
+                    <small class="text-muted">Este motivo quedará registrado formalmente en el sistema.</small>
+                </div>
+
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-x-circle"></i> Confirmar Rechazo del Proceso
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Sección de Radicación de Cancelación (Solo para Técnicos/Gestores cuando el plan está RECHAZADO) -->
 {% if plan.estado == 'RECHAZADO' %}

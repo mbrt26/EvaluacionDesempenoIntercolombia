@@ -6,106 +6,114 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db.models import Q
+from django.core.paginator import Paginator
 from .models import Proveedor, Evaluacion, PlanMejoramiento
 
 @login_required
 def lista_proveedores_nueva(request):
-    """Vista completamente nueva para proveedores"""
+    """Vista completamente nueva para proveedores - Muestra TODAS las evaluaciones"""
 
     # Verificar permisos
     if hasattr(request.user, 'proveedor'):
         messages.error(request, 'No tiene permisos para ver esta página')
         return redirect('dashboard_proveedor')
 
+    # Determinar si es gestor o técnico
+    es_gestor = hasattr(request.user, 'perfil') and request.user.perfil.es_gestor
+    es_tecnico = hasattr(request.user, 'perfil') and request.user.perfil.es_tecnico
+
     # Obtener filtros
     filtro_proveedor = request.GET.get('proveedor', '')
     filtro_categoria = request.GET.get('categoria', '')
     filtro_estado_plan = request.GET.get('estado_plan', '')
-    filtro_requiere_plan = request.GET.get('requiere_plan', '')
 
-    # Obtener todos los datos necesarios
-    datos_proveedores = []
-
-    # Obtener todos los proveedores con sus evaluaciones
-    proveedores = Proveedor.objects.all()
+    # Obtener evaluaciones según rol
+    if es_gestor:
+        # Gestor ve todas las evaluaciones
+        evaluaciones = Evaluacion.objects.select_related('proveedor').all()
+    else:
+        # Técnico solo ve evaluaciones asignadas a él
+        evaluaciones = Evaluacion.objects.select_related('proveedor').filter(
+            tecnico_asignado=request.user
+        )
 
     # Aplicar filtro de proveedor
     if filtro_proveedor:
-        proveedores = proveedores.filter(
-            Q(razon_social__icontains=filtro_proveedor) |
-            Q(nit__icontains=filtro_proveedor)
+        evaluaciones = evaluaciones.filter(
+            Q(proveedor__razon_social__icontains=filtro_proveedor) |
+            Q(proveedor__nit__icontains=filtro_proveedor)
         )
 
-    proveedores = proveedores.order_by('razon_social')
-    
-    for proveedor in proveedores:
-        # Obtener la última evaluación
-        evaluacion = Evaluacion.objects.filter(
-            proveedor=proveedor
-        ).order_by('-fecha').first()
-        
-        if evaluacion:
-            # Obtener el plan si existe
-            plan = PlanMejoramiento.objects.filter(
-                proveedor=proveedor,
-                evaluacion=evaluacion
-            ).order_by('-fecha_creacion').first()
-            
-            # Determinar el estado del plan
-            estado_plan = "NO_APLICA"
-            color_estado = "gris"
-            icono_estado = "○"
-            
-            if evaluacion.puntaje < 80:
-                if plan:
-                    estado_plan = plan.get_estado_display()
-                    if plan.estado == 'APROBADO':
-                        color_estado = "verde"
-                        icono_estado = "✓"
-                    elif plan.estado == 'RECHAZADO':
-                        color_estado = "rojo"
-                        icono_estado = "✗"
-                    elif plan.estado == 'ENVIADO':
-                        color_estado = "azul"
-                        icono_estado = "→"
-                    elif plan.estado == 'REQUIERE_AJUSTES':
-                        color_estado = "naranja"
-                        icono_estado = "!"
-                    else:
-                        color_estado = "amarillo"
-                        icono_estado = "..."
-                else:
-                    estado_plan = "SIN PLAN (Requerido)"
+    evaluaciones = evaluaciones.order_by('-fecha')
+
+    # Construir datos para cada evaluación
+    datos_evaluaciones = []
+
+    for evaluacion in evaluaciones:
+        proveedor = evaluacion.proveedor
+
+        # Obtener el plan si existe
+        plan = PlanMejoramiento.objects.filter(
+            proveedor=proveedor,
+            evaluacion=evaluacion
+        ).order_by('-fecha_creacion').first()
+
+        # Determinar el estado del plan
+        estado_plan = "NO_APLICA"
+        color_estado = "gris"
+        icono_estado = "○"
+        requiere_plan = evaluacion.puntaje < 80
+
+        if requiere_plan:
+            if plan:
+                estado_plan = plan.get_estado_display()
+                if plan.estado == 'APROBADO':
+                    color_estado = "verde"
+                    icono_estado = "✓"
+                elif plan.estado == 'RECHAZADO':
                     color_estado = "rojo"
-                    icono_estado = "⚠"
+                    icono_estado = "✗"
+                elif plan.estado == 'ENVIADO':
+                    color_estado = "azul"
+                    icono_estado = "→"
+                elif plan.estado == 'REQUIERE_AJUSTES':
+                    color_estado = "naranja"
+                    icono_estado = "!"
+                else:
+                    color_estado = "amarillo"
+                    icono_estado = "..."
             else:
-                estado_plan = "No requiere"
-                color_estado = "verde-claro"
-                icono_estado = "—"
+                estado_plan = "SIN PLAN (Requerido)"
+                color_estado = "rojo"
+                icono_estado = "⚠"
+        else:
+            estado_plan = "No requiere"
+            color_estado = "verde-claro"
+            icono_estado = "—"
 
-            # Determinar color del puntaje (Parametrización ITCO-ISA)
-            if evaluacion.puntaje >= 80:
-                color_puntaje = "verde"
-            elif evaluacion.puntaje >= 60:
-                color_puntaje = "amarillo"
-            else:
-                color_puntaje = "rojo"
+        # Determinar color del puntaje (Parametrización ITCO-ISA)
+        if evaluacion.puntaje >= 80:
+            color_puntaje = "verde"
+        elif evaluacion.puntaje >= 60:
+            color_puntaje = "amarillo"
+        else:
+            color_puntaje = "rojo"
 
-            datos_proveedores.append({
-                'proveedor': proveedor,
-                'evaluacion': evaluacion,
-                'plan': plan,
-                'estado_plan': estado_plan,
-                'color_estado': color_estado,
-                'icono_estado': icono_estado,
-                'color_puntaje': color_puntaje,
-                'requiere_plan': evaluacion.puntaje < 80,
-            })
+        datos_evaluaciones.append({
+            'proveedor': proveedor,
+            'evaluacion': evaluacion,
+            'plan': plan,
+            'estado_plan': estado_plan,
+            'color_estado': color_estado,
+            'icono_estado': icono_estado,
+            'color_puntaje': color_puntaje,
+            'requiere_plan': requiere_plan,
+        })
 
     # Aplicar filtros adicionales
-    datos_filtrados = datos_proveedores
+    datos_filtrados = datos_evaluaciones
 
-    # Filtro por categoría de puntaje
+    # Filtro por categoría de puntaje (Nota)
     if filtro_categoria:
         if filtro_categoria == 'critica':
             datos_filtrados = [d for d in datos_filtrados if d['evaluacion'].puntaje < 60]
@@ -123,34 +131,28 @@ def lista_proveedores_nueva(request):
         else:
             datos_filtrados = [d for d in datos_filtrados if d['plan'] and d['plan'].estado == filtro_estado_plan]
 
-    # Filtro por si requiere plan
-    if filtro_requiere_plan:
-        if filtro_requiere_plan == 'si':
-            datos_filtrados = [d for d in datos_filtrados if d['requiere_plan']]
-        elif filtro_requiere_plan == 'no':
-            datos_filtrados = [d for d in datos_filtrados if not d['requiere_plan']]
+    # Calcular estadísticas (sobre todos los datos, no solo filtrados)
+    total = len(datos_evaluaciones)
+    requieren_plan_count = sum(1 for d in datos_evaluaciones if d['requiere_plan'])
+    con_plan_aprobado = sum(1 for d in datos_evaluaciones if d['plan'] and d['plan'].estado == 'APROBADO')
+    con_plan_pendiente = sum(1 for d in datos_evaluaciones if d['plan'] and d['plan'].estado in ['ENVIADO', 'EN_REVISION'])
 
-    # Ordenar por jerarquía: Críticos primero (puntaje bajo), luego aceptables, luego satisfactorios
-    # Orden: 1) Puntaje ascendente (peores primero), 2) Razón social alfabética
-    datos_filtrados.sort(key=lambda x: (x['evaluacion'].puntaje, x['proveedor'].razon_social))
-
-    # Calcular estadísticas (siempre sobre todos los datos, no solo filtrados)
-    total = len(datos_proveedores)
-    requieren_plan = sum(1 for d in datos_proveedores if d['requiere_plan'])
-    con_plan_aprobado = sum(1 for d in datos_proveedores if d['plan'] and d['plan'].estado == 'APROBADO')
-    con_plan_pendiente = sum(1 for d in datos_proveedores if d['plan'] and d['plan'].estado in ['ENVIADO', 'EN_REVISION'])
+    # Paginación de 20 registros
+    paginator = Paginator(datos_filtrados, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     context = {
-        'datos': datos_filtrados,
+        'datos': page_obj,
+        'page_obj': page_obj,
         'filtros': {
             'proveedor': filtro_proveedor,
             'categoria': filtro_categoria,
             'estado_plan': filtro_estado_plan,
-            'requiere_plan': filtro_requiere_plan,
         },
         'estadisticas': {
             'total': total,
-            'requieren_plan': requieren_plan,
+            'requieren_plan': requieren_plan_count,
             'aprobados': con_plan_aprobado,
             'pendientes': con_plan_pendiente,
         }

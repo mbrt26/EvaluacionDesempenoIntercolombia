@@ -41,50 +41,21 @@
     </div>
 </div>
 
-<!-- Estadísticas Generales -->
+<!-- Resumen de Evaluaciones y Estado de Planes -->
 <div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Estadísticas Generales</h5>
-            </div>
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-4 mb-3">
-                        <div class="stat-number text-primary">{{ estadisticas.total_evaluaciones }}</div>
-                        <div class="stat-label">Evaluaciones</div>
-                    </div>
-                    <div class="col-4">
-                        <div class="stat-number text-info">{{ estadisticas.total_planes }}</div>
-                        <div class="stat-label">Planes Totales</div>
-                    </div>
-                    <div class="col-4">
-                        <div class="stat-number text-success">{{ estadisticas.planes_aprobados }}</div>
-                        <div class="stat-label">Planes Aprobados</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-6">
-        <div class="card">
+    <div class="col-md-4">
+        <div class="card h-100">
             <div class="card-header bg-secondary text-white">
                 <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> Resumen de Evaluaciones</h5>
             </div>
             <div class="card-body">
                 <div class="row text-center">
-                    <div class="col-4">
-                        <div class="stat-number text-success">{{ estadisticas.evaluaciones_satisfactorias }}</div>
-                        <div class="stat-label">Satisfactorias</div>
-                        <small class="text-muted">(≥80)</small>
-                    </div>
-                    <div class="col-4">
+                    <div class="col-6">
                         <div class="stat-number text-warning">{{ estadisticas.evaluaciones_aceptables }}</div>
                         <div class="stat-label">Aceptables</div>
                         <small class="text-muted">(60-79)</small>
                     </div>
-                    <div class="col-4">
+                    <div class="col-6">
                         <div class="stat-number text-danger">{{ estadisticas.evaluaciones_criticas }}</div>
                         <div class="stat-label">Críticas</div>
                         <small class="text-muted">(&lt;60)</small>
@@ -93,48 +64,44 @@
             </div>
         </div>
     </div>
-</div>
-
-<!-- Estados de Planes -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
+    <div class="col-md-8">
+        <div class="card h-100">
             <div class="card-header bg-dark text-white">
                 <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> Estado de Planes de Mejoramiento</h5>
             </div>
             <div class="card-body">
                 <div class="row text-center">
-                    <div class="col-md-2">
+                    <div class="col">
                         <div class="mb-2">
                             <span class="badge bg-secondary fs-4">{{ estadisticas.planes_borrador }}</span>
                         </div>
                         <small class="text-muted">Borrador</small>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col">
                         <div class="mb-2">
                             <span class="badge bg-info fs-4">{{ estadisticas.planes_enviados }}</span>
                         </div>
                         <small class="text-muted">Enviados</small>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col">
                         <div class="mb-2">
                             <span class="badge bg-warning fs-4">{{ estadisticas.planes_revision }}</span>
                         </div>
                         <small class="text-muted">En Revisión</small>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col">
                         <div class="mb-2">
                             <span class="badge bg-danger fs-4">{{ estadisticas.planes_requiere_ajustes }}</span>
                         </div>
                         <small class="text-muted">Requiere Ajustes</small>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col">
                         <div class="mb-2">
                             <span class="badge bg-success fs-4">{{ estadisticas.planes_aprobados }}</span>
                         </div>
                         <small class="text-muted">Aprobados</small>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col">
                         <div class="mb-2">
                             <span class="badge bg-dark fs-4">{{ estadisticas.planes_rechazados }}</span>
                         </div>
@@ -158,43 +125,42 @@
         <form method="get" class="mb-4">
             <div class="row g-3">
                 <div class="col-md-3">
-                    <label class="form-label"><strong>Proveedor (Razón Social o NIT)</strong></label>
-                    <input type="text" name="proveedor" class="form-control" placeholder="Buscar proveedor..." value="{{ filtros.proveedor }}">
+                    <label class="form-label"><strong>N° Contrato / Orden</strong></label>
+                    <input type="text" name="contrato" class="form-control" placeholder="Buscar por palabra clave..." value="{{ filtros.contrato }}">
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label"><strong>N° Contrato</strong></label>
-                    <input type="text" name="contrato" class="form-control" placeholder="N° Contrato..." value="{{ filtros.contrato }}">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label"><strong>Fecha Desde</strong></label>
-                    <input type="date" name="fecha_desde" class="form-control" value="{{ filtros.fecha_desde }}">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label"><strong>Fecha Hasta</strong></label>
-                    <input type="date" name="fecha_hasta" class="form-control" value="{{ filtros.fecha_hasta }}">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label"><strong>Categoría</strong></label>
+                    <label class="form-label"><strong>Nota</strong></label>
                     <select name="categoria" class="form-select">
                         <option value="">Todas</option>
-                        <option value="satisfactoria" {% if filtros.categoria == 'satisfactoria' %}selected{% endif %}>Satisfactoria (≥80)</option>
                         <option value="aceptable" {% if filtros.categoria == 'aceptable' %}selected{% endif %}>Aceptable (60-79)</option>
                         <option value="critica" {% if filtros.categoria == 'critica' %}selected{% endif %}>Crítica (&lt;60)</option>
                     </select>
                 </div>
-                <div class="col-md-1 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary w-100">
+                <div class="col-md-2">
+                    <label class="form-label"><strong>Estado Plan</strong></label>
+                    <select name="estado_plan" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="SIN_PLAN" {% if filtros.estado_plan == 'SIN_PLAN' %}selected{% endif %}>Sin Plan</option>
+                        <option value="NO_REQUIERE" {% if filtros.estado_plan == 'NO_REQUIERE' %}selected{% endif %}>No Requiere</option>
+                        <option value="BORRADOR" {% if filtros.estado_plan == 'BORRADOR' %}selected{% endif %}>Borrador</option>
+                        <option value="ENVIADO" {% if filtros.estado_plan == 'ENVIADO' %}selected{% endif %}>Enviado</option>
+                        <option value="EN_REVISION" {% if filtros.estado_plan == 'EN_REVISION' %}selected{% endif %}>En Revisión</option>
+                        <option value="REQUIERE_AJUSTES" {% if filtros.estado_plan == 'REQUIERE_AJUSTES' %}selected{% endif %}>Requiere Ajustes</option>
+                        <option value="APROBADO" {% if filtros.estado_plan == 'APROBADO' %}selected{% endif %}>Aprobado</option>
+                        <option value="RECHAZADO" {% if filtros.estado_plan == 'RECHAZADO' %}selected{% endif %}>Rechazado</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
                         <i class="bi bi-search"></i> Filtrar
                     </button>
+                    {% if filtros.contrato or filtros.categoria or filtros.estado_plan %}
+                    <a href="{% url 'tecnico_panel' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Limpiar
+                    </a>
+                    {% endif %}
                 </div>
             </div>
-            {% if filtros.proveedor or filtros.contrato or filtros.fecha_desde or filtros.fecha_hasta or filtros.categoria %}
-            <div class="mt-3">
-                <a href="{% url 'tecnico_panel' %}" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-x-circle"></i> Limpiar Filtros
-                </a>
-            </div>
-            {% endif %}
         </form>
 
         <div class="table-responsive">

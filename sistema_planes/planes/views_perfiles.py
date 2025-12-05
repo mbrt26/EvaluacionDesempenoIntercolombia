@@ -362,7 +362,8 @@ def cargar_evaluacion_automatica(request):
                     proveedor=proveedor,
                     tecnico_asignado=tecnico,
                     numero_contrato=request.POST.get('numero_contrato'),
-                    tipo_contrato=request.POST.get('tipo_contrato'),
+                    sociedad=request.POST.get('sociedad'),
+                    tipo_contrato=request.POST.get('tipo_calificacion'),  # Guardar el tipo de contrato seleccionado
                     subcategoria=request.POST.get('subcategoria'),
                     puntaje=puntaje_total,
                     puntaje_gestion=puntaje_gestion,
@@ -379,6 +380,7 @@ def cargar_evaluacion_automatica(request):
                     observaciones_oportunidad='',
                     observaciones_ambiental_social='',
                     observaciones_sst='',
+                    observaciones_tecnico=request.POST.get('observaciones_tecnico', ''),
                     observaciones_generales=request.POST.get('observaciones_generales', ''),
                     fecha=timezone.now().date(),
                 )
@@ -426,8 +428,8 @@ def cargar_evaluacion_automatica(request):
                                         observaciones=observaciones
                                     )
 
-                # Obtener estado del formulario
-                estado_plan = request.POST.get('estado', 'BORRADOR')
+                # El plan siempre se crea en estado BORRADOR para que el proveedor lo complete
+                estado_plan = 'BORRADOR'
 
                 # Si requiere plan de mejoramiento, crearlo automáticamente
                 if puntaje_total < 80:

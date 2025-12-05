@@ -27,10 +27,23 @@ def dashboard_estadisticas(request):
     total_evaluaciones = Evaluacion.objects.count()
     total_planes = PlanMejoramiento.objects.count()
     
-    # Evaluaciones por rango de puntaje (Parametrización ITCO-ISA)
-    evaluaciones_satisfactorio = Evaluacion.objects.filter(puntaje__gte=80).count()
+    # Evaluaciones por rango de puntaje (Solo las que requieren plan de mejoramiento)
     evaluaciones_aceptable = Evaluacion.objects.filter(puntaje__gte=60, puntaje__lt=80).count()
     evaluaciones_critico = Evaluacion.objects.filter(puntaje__lt=60).count()
+
+    # Evaluaciones por Sociedad
+    evaluaciones_por_sociedad = Evaluacion.objects.exclude(
+        sociedad__isnull=True
+    ).exclude(sociedad='').values('sociedad').annotate(
+        total=Count('id')
+    ).order_by('sociedad')
+
+    # Evaluaciones por Tipo de Contrato
+    evaluaciones_por_tipo_contrato = Evaluacion.objects.exclude(
+        tipo_contrato__isnull=True
+    ).exclude(tipo_contrato='').values('tipo_contrato').annotate(
+        total=Count('id')
+    ).order_by('tipo_contrato')
     
     # Planes por estado
     planes_por_estado = PlanMejoramiento.objects.values('estado').annotate(
@@ -107,19 +120,16 @@ def dashboard_estadisticas(request):
     if (planes_aprobados + planes_rechazados) > 0:
         tasa_cumplimiento = round((planes_aprobados / (planes_aprobados + planes_rechazados)) * 100, 1)
     
-    # Preparar datos para gráficos (Parametrización ITCO-ISA)
+    # Preparar datos para gráficos (Solo evaluaciones que requieren plan)
+    # Formato correcto para Chart.js
     datos_puntaje = {
-        'labels': ['Satisfactorio (≥80)', 'Aceptable (60-79)', 'Crítico (<60)'],
-        'data': [evaluaciones_satisfactorio, evaluaciones_aceptable, evaluaciones_critico],
-        'backgroundColor': ['#28a745', '#FFA500', '#dc3545']
+        'labels': ['Aceptable (60-79)', 'Crítico (<60)'],
+        'datasets': [{
+            'data': [evaluaciones_aceptable, evaluaciones_critico],
+            'backgroundColor': ['#FFA500', '#dc3545']
+        }]
     }
-    
-    datos_estados = {
-        'labels': [],
-        'data': [],
-        'backgroundColor': []
-    }
-    
+
     colores_estados = {
         'BORRADOR': '#6c757d',
         'ENVIADO': '#0066CC',
@@ -130,14 +140,81 @@ def dashboard_estadisticas(request):
         'REQUIERE_AJUSTES': '#fd7e14',
         'DOCUMENTOS_REEVALUADOS': '#6f42c1',
         'APROBADO': '#28a745',
-        'RECHAZADO': '#dc3545'
+        'RECHAZADO': '#dc3545',
+        'REEVALUAR': '#6f42c1'
     }
-    
+
+    labels_estados = []
+    data_estados = []
+    colors_estados = []
+
     for estado, total in estados_dict.items():
-        datos_estados['labels'].append(dict(PlanMejoramiento.ESTADOS)[estado])
-        datos_estados['data'].append(total)
-        datos_estados['backgroundColor'].append(colores_estados.get(estado, '#6c757d'))
-    
+        try:
+            labels_estados.append(dict(PlanMejoramiento.ESTADOS).get(estado, estado))
+        except:
+            labels_estados.append(estado)
+        data_estados.append(total)
+        colors_estados.append(colores_estados.get(estado, '#6c757d'))
+
+    datos_estados = {
+        'labels': labels_estados,
+        'datasets': [{
+            'data': data_estados,
+            'backgroundColor': colors_estados
+        }]
+    }
+
+    # Datos para gráfico de Sociedad
+    colores_sociedad = {
+        'ISA': '#003366',
+        'ITCO': '#0066CC',
+        'TRANSELCA': '#00A0D2'
+    }
+    datos_sociedad = {
+        'labels': [item['sociedad'] for item in evaluaciones_por_sociedad],
+        'datasets': [{
+            'data': [item['total'] for item in evaluaciones_por_sociedad],
+            'backgroundColor': [colores_sociedad.get(item['sociedad'], '#6c757d') for item in evaluaciones_por_sociedad]
+        }]
+    }
+
+    # Datos para gráfico de Tipo de Contrato
+    nombres_tipo_contrato = {
+        # Nuevos tipos (numéricos)
+        '1': '1 - BIENES SIN SST Y AMB',
+        '2': '2 - SERVICIOS SIN SST Y AMB',
+        '3': '3 - BIENES Y SERVICIOS SIN SST Y AMB',
+        '6': '6 - SERVICIOS SÓLO CON SST',
+        '7': '7 - SERVICIOS SÓLO CON AMB',
+        '8': '8 - BIENES Y SERVICIOS SÓLO CON SST',
+        '9': '9 - BIENES Y SERVICIOS SÓLO CON AMB',
+        '10': '10 - BIENES SÓLO CON SST',
+        '11': '11 - BIENES SÓLO CON AMB',
+        '12': '12 - BIENES CON SST Y AMB',
+        # Tipos antiguos (texto)
+        'OBRA': 'Obra',
+        'SUMINISTRO': 'Suministro',
+        'SERVICIO': 'Prestación de Servicios',
+        'CONSULTORIA': 'Consultoría',
+        'INTERVENTORIA': 'Interventoría',
+        'ORDEN_COMPRA': 'Orden de Compra',
+        'OBRAS_CIVILES': 'Obras Civiles',
+        'SUMINISTRO_EQUIPOS': 'Suministro de Equipos',
+        'MONTAJE_ELECTROMECANICO': 'Montaje Electromecánico',
+        'SERVICIOS_TECNICOS': 'Servicios Técnicos',
+        'MANTENIMIENTO': 'Mantenimiento',
+        'ESTUDIOS_DISENOS': 'Estudios y Diseños',
+        'TRANSPORTE': 'Transporte',
+        'OTRO': 'Otro'
+    }
+    datos_tipo_contrato = {
+        'labels': [nombres_tipo_contrato.get(str(item['tipo_contrato']), str(item['tipo_contrato'])) for item in evaluaciones_por_tipo_contrato],
+        'datasets': [{
+            'data': [item['total'] for item in evaluaciones_por_tipo_contrato],
+            'backgroundColor': ['#003366', '#0066CC', '#00A0D2', '#28a745', '#FFA500', '#dc3545', '#6f42c1', '#fd7e14', '#17a2b8', '#6c757d', '#20c997', '#e83e8c']
+        }]
+    }
+
     context = {
         # Estadísticas generales
         'total_proveedores': total_proveedores,
@@ -145,8 +222,7 @@ def dashboard_estadisticas(request):
         'total_planes': total_planes,
         'tasa_cumplimiento': tasa_cumplimiento,
         
-        # Evaluaciones por puntaje
-        'evaluaciones_satisfactorio': evaluaciones_satisfactorio,
+        # Evaluaciones por puntaje (solo las que requieren plan)
         'evaluaciones_aceptable': evaluaciones_aceptable,
         'evaluaciones_critico': evaluaciones_critico,
         
@@ -172,6 +248,8 @@ def dashboard_estadisticas(request):
         'datos_puntaje_json': json.dumps(datos_puntaje),
         'datos_estados_json': json.dumps(datos_estados),
         'evaluaciones_por_mes_json': json.dumps(evaluaciones_por_mes),
+        'datos_sociedad_json': json.dumps(datos_sociedad),
+        'datos_tipo_contrato_json': json.dumps(datos_tipo_contrato),
     }
     
     return render(request, 'planes/dashboard_estadisticas.html', context)

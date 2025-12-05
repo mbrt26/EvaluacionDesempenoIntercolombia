@@ -58,35 +58,20 @@
                         </div>
 
                         <div class="col-md-6 mb-3">
-                            <label for="tipo_contrato" class="form-label">Tipo de Contrato *</label>
-                            <select class="form-control" id="tipo_contrato" name="tipo_contrato" required>
-                                <option value="">-- Seleccione tipo de contrato --</option>
-                                <optgroup label="Genéricos">
-                                    <option value="OBRA">Obra</option>
-                                    <option value="SUMINISTRO">Suministro</option>
-                                    <option value="SERVICIO">Prestación de Servicios</option>
-                                    <option value="CONSULTORIA">Consultoría</option>
-                                    <option value="INTERVENTORIA">Interventoría</option>
-                                    <option value="ORDEN_COMPRA">Orden de Compra</option>
-                                </optgroup>
-                                <optgroup label="Sector Eléctrico">
-                                    <option value="OBRAS_CIVILES">Obras Civiles</option>
-                                    <option value="SUMINISTRO_EQUIPOS">Suministro de Equipos</option>
-                                    <option value="MONTAJE_ELECTROMECANICO">Montaje Electromecánico</option>
-                                    <option value="SERVICIOS_TECNICOS">Servicios Técnicos Especializados</option>
-                                    <option value="MANTENIMIENTO">Mantenimiento</option>
-                                    <option value="ESTUDIOS_DISENOS">Estudios y Diseños</option>
-                                    <option value="TRANSPORTE">Transporte</option>
-                                </optgroup>
-                                <option value="OTRO">Otro</option>
-                            </select>
+                            <label for="numero_contrato" class="form-label">N° Contrato/Orden *</label>
+                            <input type="text" class="form-control" id="numero_contrato" name="numero_contrato" required>
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="numero_contrato" class="form-label">N° Contrato/Orden *</label>
-                            <input type="text" class="form-control" id="numero_contrato" name="numero_contrato" required>
+                            <label for="sociedad" class="form-label">Sociedad *</label>
+                            <select class="form-control" id="sociedad" name="sociedad" required>
+                                <option value="">-- Seleccione sociedad --</option>
+                                <option value="ISA">ISA</option>
+                                <option value="ITCO">ITCO</option>
+                                <option value="TRANSELCA">TRANSELCA</option>
+                            </select>
                         </div>
 
                         <div class="col-md-6 mb-3">
@@ -95,26 +80,83 @@
                         </div>
                     </div>
 
-                    <!-- Selector de Tipo de Calificación -->
+                    <!-- Selector de Tipo de Contrato y Tipo de Calificación -->
                     <h5 class="mb-3 mt-4 p-2 bg-warning text-dark rounded"><i class="bi bi-star-fill"></i> Tipo de Evaluación</h5>
 
                     <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <label for="tipo_calificacion" class="form-label">Tipo de Calificación *</label>
-                            <select class="form-control" id="tipo_calificacion" name="tipo_calificacion" required>
-                                <option value="">-- Seleccione el tipo de calificación --</option>
+                        <div class="col-md-3 mb-3">
+                            <label for="tipo_contrato_num" class="form-label">Tipo de Contrato *</label>
+                            <select class="form-control" id="tipo_contrato_num" name="tipo_contrato_num" required onchange="sincronizarTipoCalificacion()">
+                                <option value="">-- Seleccione --</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                                <option value="11">11</option>
+                                <option value="12">12</option>
                             </select>
-                            <div class="form-text">
-                                Seleccione el tipo según si evalúa bienes, servicios, y si incluye SST y/o Ambiental
-                            </div>
+                        </div>
+                        <div class="col-md-9 mb-3">
+                            <label for="tipo_calificacion" class="form-label">Tipo de Calificación *</label>
+                            <select class="form-control" id="tipo_calificacion" name="tipo_calificacion" required onchange="sincronizarTipoContrato()">
+                                <option value="">-- Seleccione el tipo de calificación --</option>
+                                <option value="1">BIENES SIN SST Y AMB</option>
+                                <option value="2">SERVICIOS SIN SST Y AMB</option>
+                                <option value="3">BIENES Y SERVICIOS SIN SST Y AMB</option>
+                                <option value="6">SERVICIOS SÓLO CON SST</option>
+                                <option value="7">SERVICIOS SÓLO CON AMB</option>
+                                <option value="8">BIENES Y SERVICIOS SÓLO CON SST</option>
+                                <option value="9">BIENES Y SERVICIOS SÓLO CON AMB</option>
+                                <option value="10">BIENES SÓLO CON SST</option>
+                                <option value="11">BIENES SÓLO CON AMB</option>
+                                <option value="12">BIENES CON SST Y AMB</option>
+                            </select>
                         </div>
                     </div>
 
-                    <!-- Contenedor para Criterios Dinámicos -->
+                    <!-- Contenedor para Criterios Dinámicos (funcionalidad original) -->
                     <div id="criterios-container" class="mt-4">
                         <div class="alert alert-warning">
                             <i class="bi bi-info-circle"></i>
-                            Primero seleccione el <strong>Tipo de Calificación</strong> para cargar los criterios correspondientes.
+                            Primero seleccione el <strong>Tipo de Contrato</strong> para cargar los criterios correspondientes.
+                        </div>
+                    </div>
+
+                    <!-- NUEVA SECCIÓN: Criterios de Evaluación (evaluados) - Resumen en tabla -->
+                    <div id="resumen-criterios" class="mt-4" style="display: none;">
+                        <h5 class="mb-3 p-2 bg-info text-white rounded"><i class="bi bi-table"></i> Criterios de Evaluación (evaluados)</h5>
+                        <p class="text-muted mb-3">Cada criterio se evalúa según su peso específico. Total máximo: 100 puntos</p>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="tabla-resumen-criterios">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th style="width: 30%;">Criterio</th>
+                                        <th style="width: 15%;" class="text-center">Puntaje</th>
+                                        <th style="width: 15%;" class="text-center">Máximo</th>
+                                        <th style="width: 40%;">Observaciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-resumen">
+                                    <!-- Se llena dinámicamente -->
+                                </tbody>
+                                <tfoot class="table-primary">
+                                    <tr>
+                                        <td><strong>TOTAL</strong></td>
+                                        <td class="text-center">
+                                            <strong id="resumen-total-puntaje">0</strong>
+                                        </td>
+                                        <td class="text-center">
+                                            <strong>100</strong>
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
                         </div>
                     </div>
 
@@ -122,6 +164,14 @@
 
                     <!-- Mensaje condicional según puntaje -->
                     <div id="mensaje_puntaje" class="mt-3" style="display: none;"></div>
+
+                    <!-- Observaciones Técnico -->
+                    <div class="mb-3 mt-3">
+                        <label for="observaciones_tecnico" class="form-label"><strong>Observaciones Técnico</strong></label>
+                        <textarea class="form-control" id="observaciones_tecnico" name="observaciones_tecnico"
+                                  rows="4" placeholder="Ingrese observaciones del técnico (opcional)"></textarea>
+                        <small class="text-muted">Campo opcional para comentarios del técnico responsable</small>
+                    </div>
 
                     <!-- Observaciones Generales -->
                     <div class="mb-3 mt-3">
@@ -145,36 +195,30 @@
                         }
                     }
 
-                    // Cargar tipos de calificación al cargar la página
-                    document.addEventListener('DOMContentLoaded', function() {
-                        fetch('{% url "api_tipos_calificacion" %}')
-                            .then(response => response.json())
-                            .then(data => {
-                                const select = document.getElementById('tipo_calificacion');
-                                data.tipos.forEach(tipo => {
-                                    const option = document.createElement('option');
-                                    option.value = tipo.id;
-                                    option.textContent = tipo.nombre;
-                                    option.dataset.codigo = tipo.codigo;
-                                    select.appendChild(option);
-                                });
-                            })
-                            .catch(error => {
-                                console.error('Error cargando tipos de calificación:', error);
-                            });
-                    });
+                    // Función para sincronizar cuando se selecciona Tipo de Contrato (número)
+                    function sincronizarTipoCalificacion() {
+                        const tipoContratoNum = document.getElementById('tipo_contrato_num').value;
+                        document.getElementById('tipo_calificacion').value = tipoContratoNum;
+                        cargarCriterios(tipoContratoNum);
+                    }
 
-                    // Cuando se selecciona un tipo de calificación
-                    document.getElementById('tipo_calificacion').addEventListener('change', function() {
-                        const tipoId = this.value;
+                    // Función para sincronizar cuando se selecciona Tipo de Calificación
+                    function sincronizarTipoContrato() {
+                        const tipoCalificacion = document.getElementById('tipo_calificacion').value;
+                        document.getElementById('tipo_contrato_num').value = tipoCalificacion;
+                        cargarCriterios(tipoCalificacion);
+                    }
 
+                    // Función para cargar los criterios
+                    function cargarCriterios(tipoId) {
                         if (!tipoId) {
                             document.getElementById('criterios-container').innerHTML = `
                                 <div class="alert alert-warning">
                                     <i class="bi bi-info-circle"></i>
-                                    Primero seleccione el <strong>Tipo de Calificación</strong> para cargar los criterios correspondientes.
+                                    Primero seleccione el <strong>Tipo de Contrato</strong> y <strong>Tipo de Calificación</strong> para cargar los criterios correspondientes.
                                 </div>
                             `;
+                            document.getElementById('resumen-criterios').style.display = 'none';
                             return;
                         }
 
@@ -204,7 +248,7 @@
                                     </div>
                                 `;
                             });
-                    });
+                    }
 
                     function renderizarCriterios(criterios) {
                         const container = document.getElementById('criterios-container');
@@ -241,14 +285,18 @@
                                                        class="criterio-puntaje"
                                                        name="criterio_${criterio.id_criterio}_puntaje"
                                                        id="criterio_${criterio.id_criterio}_puntaje"
+                                                       data-descripcion="${criterio.descripcion}"
+                                                       data-maximo="${puntajeMaximo}"
                                                        value="0">
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label fw-bold">Observaciones</label>
                                                 <input type="text"
-                                                       class="form-control"
+                                                       class="form-control criterio-observacion"
                                                        name="criterio_${criterio.id_criterio}_obs"
-                                                       placeholder="Observaciones del criterio (opcional)">
+                                                       id="criterio_${criterio.id_criterio}_obs"
+                                                       placeholder="Observaciones del criterio (opcional)"
+                                                       oninput="actualizarTablaResumen()">
                                             </div>
                                         </div>
 
@@ -320,16 +368,12 @@
                             displayInput.classList.remove('bg-success', 'bg-warning', 'bg-danger', 'bg-secondary', 'text-white', 'text-dark');
 
                             if (puntuacion === 0) {
-                                // Gris - Sin calificar
                                 displayInput.classList.add('bg-secondary', 'text-white');
                             } else if (porcentaje >= 80) {
-                                // Verde - Satisfactorio (≥80%)
                                 displayInput.classList.add('bg-success', 'text-white');
                             } else if (porcentaje >= 60) {
-                                // Amarillo - Aceptable (60-79%)
                                 displayInput.classList.add('bg-warning', 'text-dark');
                             } else {
-                                // Rojo - Crítico (<60%)
                                 displayInput.classList.add('bg-danger', 'text-white');
                             }
                         }
@@ -342,6 +386,53 @@
 
                         // Recalcular el total
                         calcularPuntajeTotal();
+
+                        // Actualizar tabla resumen
+                        actualizarTablaResumen();
+                    }
+
+                    function actualizarTablaResumen() {
+                        const tbody = document.getElementById('tbody-resumen');
+                        const resumenDiv = document.getElementById('resumen-criterios');
+                        const criterios = document.querySelectorAll('.criterio-puntaje');
+
+                        let html = '';
+                        let totalPuntaje = 0;
+                        let haySeleccionados = false;
+
+                        criterios.forEach(input => {
+                            const puntaje = parseFloat(input.value) || 0;
+                            if (puntaje > 0) {
+                                haySeleccionados = true;
+                                const descripcion = input.dataset.descripcion || 'Criterio';
+                                const maximo = input.dataset.maximo || '25';
+                                const criterioId = input.id.replace('criterio_', '').replace('_puntaje', '');
+                                const obsInput = document.getElementById(`criterio_${criterioId}_obs`);
+                                const observacion = obsInput ? obsInput.value : '';
+
+                                totalPuntaje += puntaje;
+
+                                html += `
+                                    <tr>
+                                        <td>
+                                            <i class="bi bi-check-circle text-success"></i>
+                                            <strong>${descripcion}</strong>
+                                        </td>
+                                        <td class="text-center">${puntaje}</td>
+                                        <td class="text-center">${maximo}</td>
+                                        <td><small>${observacion || '-'}</small></td>
+                                    </tr>
+                                `;
+                            }
+                        });
+
+                        if (haySeleccionados) {
+                            tbody.innerHTML = html;
+                            document.getElementById('resumen-total-puntaje').textContent = totalPuntaje;
+                            resumenDiv.style.display = 'block';
+                        } else {
+                            resumenDiv.style.display = 'none';
+                        }
                     }
 
                     function calcularPuntajeTotal() {
@@ -382,11 +473,11 @@
                             if (total === 0) {
                                 estadoDiv.innerHTML = '';
                             } else if (total < 60) {
-                                estadoDiv.innerHTML = '<span class="badge bg-danger fs-6">🔴 DESEMPEÑO CRÍTICO</span>';
+                                estadoDiv.innerHTML = '<span class="badge bg-danger fs-6">DESEMPEÑO CRÍTICO</span>';
                             } else if (total < 80) {
-                                estadoDiv.innerHTML = '<span class="badge bg-warning fs-6">🟡 DESEMPEÑO ACEPTABLE</span>';
+                                estadoDiv.innerHTML = '<span class="badge bg-warning fs-6">DESEMPEÑO ACEPTABLE</span>';
                             } else {
-                                estadoDiv.innerHTML = '<span class="badge bg-success fs-6">🟢 DESEMPEÑO SATISFACTORIO</span>';
+                                estadoDiv.innerHTML = '<span class="badge bg-success fs-6">DESEMPEÑO SATISFACTORIO</span>';
                             }
                         }
 
@@ -395,7 +486,7 @@
 
                         // Mostrar mensaje condicional según puntaje
                         if (mensajeDiv && submitBtn) {
-                            if (total < 60) {
+                            if (total < 60 && total > 0) {
                                 mensajeDiv.innerHTML = `
                                     <div class="alert alert-danger">
                                         <i class="bi bi-exclamation-triangle-fill"></i>
@@ -406,7 +497,7 @@
                                 submitBtn.disabled = false;
                                 submitBtn.classList.remove('btn-secondary');
                                 submitBtn.classList.add('btn-success');
-                            } else if (total < 80) {
+                            } else if (total >= 60 && total < 80) {
                                 mensajeDiv.innerHTML = `
                                     <div class="alert alert-warning">
                                         <i class="bi bi-exclamation-circle-fill"></i>
@@ -422,7 +513,6 @@
                                     <div class="alert alert-info border-info">
                                         <i class="bi bi-info-circle-fill"></i>
                                         <strong>Evaluación Satisfactoria (≥80):</strong> Esta evaluación NO requiere plan de mejoramiento.<br>
-                                        <strong>⚠️ No es necesario cargarla al sistema.</strong><br>
                                         <small class="text-muted">Solo se deben cargar evaluaciones que requieran planes de mejoramiento (puntaje &lt; 80).</small>
                                     </div>
                                 `;
@@ -440,50 +530,10 @@
                     }
                     </script>
 
-                    <h5 class="mb-3 mt-4 p-2 bg-info text-white rounded"><i class="bi bi-check-circle"></i> Aprobaciones Requeridas</h5>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <div class="card border-primary h-100">
-                                <div class="card-body">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" role="switch"
-                                               id="requiere_aprobacion_sst" name="requiere_aprobacion_sst"
-                                               value="true" style="width: 3em; height: 1.5em;">
-                                        <label class="form-check-label ms-2" for="requiere_aprobacion_sst">
-                                            <i class="bi bi-shield-check text-primary"></i>
-                                            <strong>Requiere Aprobación SST</strong>
-                                            <br>
-                                            <small class="text-muted">Seguridad y Salud en el Trabajo</small>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6 mb-3">
-                            <div class="card border-success h-100">
-                                <div class="card-body">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" role="switch"
-                                               id="requiere_aprobacion_ambiental" name="requiere_aprobacion_ambiental"
-                                               value="true" style="width: 3em; height: 1.5em;">
-                                        <label class="form-check-label ms-2" for="requiere_aprobacion_ambiental">
-                                            <i class="bi bi-tree text-success"></i>
-                                            <strong>Requiere Aprobación Ambiental</strong>
-                                            <br>
-                                            <small class="text-muted">Gestión Ambiental y Social</small>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <h5 class="mb-3 mt-4 p-2 bg-secondary text-white rounded"><i class="bi bi-calendar-event"></i> Información del Plan</h5>
 
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-12 mb-3">
                             <label for="tecnico_id" class="form-label">Técnico Responsable *</label>
                             <select class="form-control" id="tecnico_id" name="tecnico_id" required>
                                 <option value="">-- Seleccione un técnico --</option>
@@ -495,37 +545,38 @@
                                 {% endfor %}
                             </select>
                         </div>
-
-                        <div class="col-md-6 mb-3">
-                            <label for="estado" class="form-label">Estado *</label>
-                            <select class="form-control" id="estado" name="estado" required>
-                                <option value="">-- Seleccione un estado --</option>
-                                <option value="BORRADOR" selected>Borrador</option>
-                                <option value="ENVIADO">Enviado</option>
-                                <option value="FIRMADO_ENVIADO">Firmado y Enviado</option>
-                                <option value="EN_REVISION">En Revisión</option>
-                                <option value="ESPERANDO_APROBACION">Esperando Aprobación</option>
-                                <option value="SOLICITUD_AJUSTES">Solicitud de Ajustes</option>
-                                <option value="REQUIERE_AJUSTES">Requiere Ajustes</option>
-                                <option value="DOCUMENTOS_REEVALUADOS">Documentos Reevaluados</option>
-                                <option value="APROBADO">Aprobado</option>
-                                <option value="RECHAZADO">Rechazado</option>
-                            </select>
-                            <small class="text-muted">Por defecto: Borrador</small>
-                        </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="fecha_limite_aclaracion" class="form-label">Fecha Límite Aclaración</label>
                             <input type="date" class="form-control" id="fecha_limite_aclaracion" name="fecha_limite_aclaracion">
+                            <small class="text-muted">Automático: 8 días calendario desde hoy</small>
                         </div>
 
                         <div class="col-md-6 mb-3">
                             <label for="fecha_limite_plan" class="form-label">Fecha Límite Plan</label>
                             <input type="date" class="form-control" id="fecha_limite_plan" name="fecha_limite_plan">
+                            <small class="text-muted">Automático: 30 días calendario desde hoy</small>
                         </div>
                     </div>
+
+                    <script>
+                    // Calcular fechas automáticas al cargar la página
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const hoy = new Date();
+
+                        // Fecha Límite Aclaración: hoy + 8 días
+                        const fechaAclaracion = new Date(hoy);
+                        fechaAclaracion.setDate(fechaAclaracion.getDate() + 8);
+                        document.getElementById('fecha_limite_aclaracion').value = fechaAclaracion.toISOString().split('T')[0];
+
+                        // Fecha Límite Plan: hoy + 30 días
+                        const fechaPlan = new Date(hoy);
+                        fechaPlan.setDate(fechaPlan.getDate() + 30);
+                        document.getElementById('fecha_limite_plan').value = fechaPlan.toISOString().split('T')[0];
+                    });
+                    </script>
 
                     <div class="d-flex justify-content-between mt-4">
                         <a href="{% url 'gestor_registros' %}" class="btn btn-secondary">
@@ -578,9 +629,9 @@
             }
         });
 
-        $('#tipo_contrato').select2({
+        $('#sociedad').select2({
             theme: 'bootstrap-5',
-            placeholder: '-- Seleccione tipo de contrato --',
+            placeholder: '-- Seleccione sociedad --',
             allowClear: true,
             width: '100%',
             language: {

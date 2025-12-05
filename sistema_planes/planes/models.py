@@ -86,6 +86,12 @@ class Evaluacion(models.Model):
         ('OTRO', 'Otro'),
     ]
 
+    SOCIEDADES = [
+        ('ISA', 'ISA'),
+        ('ITCO', 'ITCO'),
+        ('TRANSELCA', 'TRANSELCA'),
+    ]
+
     proveedor = models.ForeignKey(
         Proveedor,
         on_delete=models.CASCADE,
@@ -94,6 +100,7 @@ class Evaluacion(models.Model):
     periodo = models.CharField(max_length=50, verbose_name='Período', blank=True, null=True)
     numero_contrato = models.CharField(max_length=100, verbose_name='N° Contrato/Orden', blank=True, null=True)
     tipo_contrato = models.CharField(max_length=30, choices=TIPOS_CONTRATO, verbose_name='Tipo de Contrato', blank=True, null=True)
+    sociedad = models.CharField(max_length=20, choices=SOCIEDADES, verbose_name='Sociedad', blank=True, null=True)
     subcategoria = models.CharField(max_length=200, verbose_name='Subcategoría', blank=True, null=True)
     tecnico_asignado = models.ForeignKey(
         User,
@@ -132,6 +139,7 @@ class Evaluacion(models.Model):
     observaciones_oportunidad = models.TextField(blank=True, verbose_name='Observaciones Oportunidad')
     observaciones_ambiental_social = models.TextField(blank=True, verbose_name='Observaciones Ambiental y Social')
     observaciones_sst = models.TextField(blank=True, verbose_name='Observaciones SST')
+    observaciones_tecnico = models.TextField(blank=True, verbose_name='Observaciones del Técnico')
     observaciones_generales = models.TextField(blank=True, verbose_name='Observaciones Generales')
     
     observaciones = models.TextField(blank=True, verbose_name='Observaciones')

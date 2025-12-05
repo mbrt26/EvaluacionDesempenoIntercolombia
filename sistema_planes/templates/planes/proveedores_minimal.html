@@ -73,12 +73,11 @@
                 <input type="text" name="proveedor" class="form-control" placeholder="Buscar proveedor..." value="{{ filtros.proveedor }}">
             </div>
             <div class="col-md-2">
-                <label class="form-label"><strong>Categoría</strong></label>
+                <label class="form-label"><strong>Nota</strong></label>
                 <select name="categoria" class="form-select">
                     <option value="">Todas</option>
-                    <option value="critica" {% if filtros.categoria == 'critica' %}selected{% endif %}>Crítica (&lt;60)</option>
                     <option value="aceptable" {% if filtros.categoria == 'aceptable' %}selected{% endif %}>Aceptable (60-79)</option>
-                    <option value="satisfactoria" {% if filtros.categoria == 'satisfactoria' %}selected{% endif %}>Satisfactoria (≥80)</option>
+                    <option value="critica" {% if filtros.categoria == 'critica' %}selected{% endif %}>Crítica (&lt;60)</option>
                 </select>
             </div>
             <div class="col-md-2">
@@ -95,19 +94,11 @@
                     <option value="RECHAZADO" {% if filtros.estado_plan == 'RECHAZADO' %}selected{% endif %}>Rechazado</option>
                 </select>
             </div>
-            <div class="col-md-2">
-                <label class="form-label"><strong>Requiere Plan</strong></label>
-                <select name="requiere_plan" class="form-select">
-                    <option value="">Todos</option>
-                    <option value="si" {% if filtros.requiere_plan == 'si' %}selected{% endif %}>Sí</option>
-                    <option value="no" {% if filtros.requiere_plan == 'no' %}selected{% endif %}>No</option>
-                </select>
-            </div>
             <div class="col-md-3 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary me-2">
                     <i class="bi bi-search"></i> Filtrar
                 </button>
-                {% if filtros.proveedor or filtros.categoria or filtros.estado_plan or filtros.requiere_plan %}
+                {% if filtros.proveedor or filtros.categoria or filtros.estado_plan %}
                 <a href="{% url 'tecnico_proveedores' %}" class="btn btn-outline-secondary">
                     <i class="bi bi-x-circle"></i> Limpiar
                 </a>
@@ -220,4 +211,66 @@
         </tbody>
     </table>
 </div>
+
+<!-- Paginación -->
+{% if page_obj.has_other_pages %}
+<nav aria-label="Paginación de registros" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1{% if filtros.proveedor %}&proveedor={{ filtros.proveedor }}{% endif %}{% if filtros.categoria %}&categoria={{ filtros.categoria }}{% endif %}{% if filtros.estado_plan %}&estado_plan={{ filtros.estado_plan }}{% endif %}" aria-label="Primera">
+                <span aria-hidden="true">&laquo;&laquo;</span>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if filtros.proveedor %}&proveedor={{ filtros.proveedor }}{% endif %}{% if filtros.categoria %}&categoria={{ filtros.categoria }}{% endif %}{% if filtros.estado_plan %}&estado_plan={{ filtros.estado_plan }}{% endif %}" aria-label="Anterior">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">&laquo;&laquo;</span>
+        </li>
+        <li class="page-item disabled">
+            <span class="page-link">&laquo;</span>
+        </li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <li class="page-item active" aria-current="page">
+                <span class="page-link">{{ num }}</span>
+            </li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ num }}{% if filtros.proveedor %}&proveedor={{ filtros.proveedor }}{% endif %}{% if filtros.categoria %}&categoria={{ filtros.categoria }}{% endif %}{% if filtros.estado_plan %}&estado_plan={{ filtros.estado_plan }}{% endif %}">{{ num }}</a>
+            </li>
+            {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if filtros.proveedor %}&proveedor={{ filtros.proveedor }}{% endif %}{% if filtros.categoria %}&categoria={{ filtros.categoria }}{% endif %}{% if filtros.estado_plan %}&estado_plan={{ filtros.estado_plan }}{% endif %}" aria-label="Siguiente">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if filtros.proveedor %}&proveedor={{ filtros.proveedor }}{% endif %}{% if filtros.categoria %}&categoria={{ filtros.categoria }}{% endif %}{% if filtros.estado_plan %}&estado_plan={{ filtros.estado_plan }}{% endif %}" aria-label="Última">
+                <span aria-hidden="true">&raquo;&raquo;</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">&raquo;</span>
+        </li>
+        <li class="page-item disabled">
+            <span class="page-link">&raquo;&raquo;</span>
+        </li>
+        {% endif %}
+    </ul>
+    <p class="text-center text-muted">
+        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} ({{ estadisticas.total }} registros totales)
+    </p>
+</nav>
+{% endif %}
 {% endblock %}
